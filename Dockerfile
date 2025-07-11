@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as base
+FROM golang:1.24-alpine as base
 
 # Load build arg
 ARG APP_HOME
@@ -11,7 +11,7 @@ WORKDIR $APP_HOME
 RUN apk add --no-cache --upgrade bash build-base
 
 # Install air
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/air-verse/air@latest
 
 # Copy go.mod and install go dependencies
 COPY go.mod ./
