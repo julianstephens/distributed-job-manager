@@ -21,4 +21,4 @@ RUN go mod download
 COPY . .
 
 # Build and run binary with live reloading
-CMD ["air"]
+CMD ["air", "start"]

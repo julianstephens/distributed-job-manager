@@ -8,12 +8,13 @@ tmp_dir = "tmp"
 cmd = "go build -o ./tmp/main ./main.go"
 # Binary file yields from `cmd`.
 bin = "./tmp/main"
+args_bin = ["start"]
 # Don't save right away (ms)
 delay = 1000
 # Watch these filename extensions.
 include_ext = ["go", "yaml", "yml"]
 # Ignore these filename extensions or directories.
-exclude_dir = ["tmp", "docs"]
+exclude_dir = ["tmp", "docs", "volume"]
 # Exclude specific regular expressions.
 exclude_regex = ["_test\\\\.go"]
 # Save logs to file

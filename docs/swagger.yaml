@@ -1,0 +1,97 @@
+definitions:
+  httputil.HTTPError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+  httputil.HTTPResponse-array_models_Task:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Task'
+        type: array
+      message:
+        type: string
+    type: object
+  httputil.HTTPResponse-models_Task:
+    properties:
+      data:
+        $ref: '#/definitions/models.Task'
+      message:
+        type: string
+    type: object
+  models.Task:
+    properties:
+      createdAt:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/models.TaskStatus'
+      title:
+        type: string
+      updatedAt:
+        type: integer
+    type: object
+  models.TaskStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - StatusPending
+    - StatusInProgress
+    - StatusCompleted
+    - StatusFailed
+info:
+  contact: {}
+paths:
+  /tasks:
+    get:
+      description: retrieves all tasks
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputil.HTTPResponse-array_models_Task'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      security:
+      - ApiKey: []
+      summary: Get all tasks
+      tags:
+      - tasks
+  /tasks/{task_id}:
+    get:
+      description: retrieves a task by its ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputil.HTTPResponse-models_Task'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      security:
+      - ApiKey: []
+      summary: Get a specific task
+      tags:
+      - tasks
+swagger: "2.0"

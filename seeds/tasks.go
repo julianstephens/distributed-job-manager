@@ -9,7 +9,6 @@ import (
 )
 
 func (s Seed) TaskSeed() {
-
 	table := s.db.Table("dts-tasks")
 
 	for range s.count {

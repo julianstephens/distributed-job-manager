@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/guregu/dynamo/v2"
+	"github.com/julianstephens/distributed-task-scheduler/pkg/logger"
 )
 
 type Seed struct {
@@ -18,7 +19,7 @@ func Execute(db *dynamo.DB, seedRowCount int, seedMethodNames ...string) {
 	seedType := reflect.TypeOf(s)
 
 	if len(seedMethodNames) == 0 {
-		log.Println("Running all seeders...")
+		logger.Infof("Running all seeders...")
 
 		for i := range seedType.NumMethod() {
 			method := seedType.Method(i)
@@ -38,8 +39,8 @@ func seed(s Seed, seedMethodName string) {
 		log.Fatal("No method called ", seedMethodName)
 	}
 
-	log.Println("Seeding", seedMethodName, "...")
+	logger.Infof("Seeding %s...", seedMethodName)
 	m.Call(nil)
 
-	log.Println("Seed", seedMethodName, "succeeded")
+	logger.Infof("Seed %s succeeded", seedMethodName)
 }
