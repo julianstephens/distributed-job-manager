@@ -19,6 +19,7 @@ services:
       target: ${ENV}
       args:
         APP_HOME: ${APP_HOME}
+    env_file: ".env"
     ports:
       - 8080:8080
     links:

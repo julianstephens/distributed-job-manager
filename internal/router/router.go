@@ -1,16 +1,19 @@
 package router
 
 import (
+	"fmt"
+
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/julianstephens/distributed-task-scheduler/docs"
 	"github.com/julianstephens/distributed-task-scheduler/internal/controller"
 	"github.com/julianstephens/distributed-task-scheduler/pkg/database"
+	"github.com/julianstephens/distributed-task-scheduler/pkg/model"
 )
 
 const BasePath = "/api/v1"
 
-func Setup() *gin.Engine {
+func Setup(conf *model.Config) *gin.Engine {
 	r := gin.New()
 
 	// f, err := os.OpenFile("ls.access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -31,7 +34,9 @@ func Setup() *gin.Engine {
 		panic(err)
 	}
 
-	api := controller.Controller{DB: db}
+	api := controller.Controller{DB: db, Config: conf}
+
+	fmt.Printf("%v", conf)
 
 	baseGroup := r.Group(BasePath)
 
@@ -39,6 +44,8 @@ func Setup() *gin.Engine {
 	{
 		taskGroup.GET("/", api.GetTasks)
 		taskGroup.GET("/:id", api.GetTask)
+		taskGroup.PUT("/", api.PutTask)
+		taskGroup.DELETE("/:id", api.DeleteTask)
 	}
 
 	return r

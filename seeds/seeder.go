@@ -5,16 +5,19 @@ import (
 	"reflect"
 
 	"github.com/guregu/dynamo/v2"
+	"github.com/julianstephens/distributed-task-scheduler/internal/config"
 	"github.com/julianstephens/distributed-task-scheduler/pkg/logger"
+	"github.com/julianstephens/distributed-task-scheduler/pkg/model"
 )
 
 type Seed struct {
 	db    *dynamo.DB
+	conf  *model.Config
 	count int
 }
 
 func Execute(db *dynamo.DB, seedRowCount int, seedMethodNames ...string) {
-	s := Seed{db: db, count: seedRowCount}
+	s := Seed{db: db, conf: config.GetConfig(), count: seedRowCount}
 
 	seedType := reflect.TypeOf(s)
 

@@ -31,7 +31,39 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httputil.HTTPResponse-array_models_Task"
+                            "$ref": "#/definitions/httputil.HTTPResponse-array_model_Task"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "description": "creates or updates a task",
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Put a task",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPResponse-model_Task"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
                         }
                     },
                     "500": {
@@ -68,7 +100,39 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httputil.HTTPResponse-models_Task"
+                            "$ref": "#/definitions/httputil.HTTPResponse-model_Task"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "description": "deletes a specific task",
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Delete a task",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPResponse-model_Task"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
                         }
                     },
                     "500": {
@@ -95,13 +159,13 @@ const docTemplate = `{
                 }
             }
         },
-        "httputil.HTTPResponse-array_models_Task": {
+        "httputil.HTTPResponse-array_model_Task": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Task"
+                        "$ref": "#/definitions/model.Task"
                     }
                 },
                 "message": {
@@ -109,19 +173,25 @@ const docTemplate = `{
                 }
             }
         },
-        "httputil.HTTPResponse-models_Task": {
+        "httputil.HTTPResponse-model_Task": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/models.Task"
+                    "$ref": "#/definitions/model.Task"
                 },
                 "message": {
                     "type": "string"
                 }
             }
         },
-        "models.Task": {
+        "model.Task": {
             "type": "object",
+            "required": [
+                "recurrence",
+                "scheduledTime",
+                "status",
+                "title"
+            ],
             "properties": {
                 "createdAt": {
                     "type": "integer"
@@ -132,18 +202,42 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "recurrence": {
+                    "$ref": "#/definitions/model.TaskRecurrence"
+                },
+                "scheduledTime": {
+                    "type": "integer"
+                },
                 "status": {
-                    "$ref": "#/definitions/models.TaskStatus"
+                    "$ref": "#/definitions/model.TaskStatus"
                 },
                 "title": {
                     "type": "string"
                 },
                 "updatedAt": {
                     "type": "integer"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
-        "models.TaskStatus": {
+        "model.TaskRecurrence": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "Once",
+                "Daily",
+                "Weekly",
+                "Monthly"
+            ]
+        },
+        "model.TaskStatus": {
             "type": "integer",
             "enum": [
                 0,

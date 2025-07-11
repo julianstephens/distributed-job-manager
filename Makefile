@@ -6,7 +6,7 @@ OAS3_GENERATOR_DOCKER_IMAGE = openapitools/openapi-generator-cli:latest-release
 .PHONY: swag up ci-swaggen build debug fmt test
 
 swag:
-	watch -n 10 swag init -g app.go
+	watch -n 10 swag init
 
 up:
 	docker compose up -d  --build backend

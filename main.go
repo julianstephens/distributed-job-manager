@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/julianstephens/distributed-task-scheduler/internal/config"
 	"github.com/julianstephens/distributed-task-scheduler/internal/router"
 	"github.com/julianstephens/distributed-task-scheduler/pkg/database"
 	"github.com/julianstephens/distributed-task-scheduler/pkg/httputil"
@@ -39,18 +40,16 @@ func handleArgs() {
 			seeds.Execute(db, masterSeedCount, args[1:]...)
 			os.Exit(0)
 		case "start":
-			r := router.Setup()
+			conf := config.GetConfig()
+			r := router.Setup(conf)
 			r.GET("/api/v1/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 			r.NoRoute(func(c *gin.Context) {
 				httputil.NewError(c, http.StatusNotFound, fmt.Errorf("resource not found"))
 			})
 
-			host := "0.0.0.0"
-			port := "8080"
-
-			logger.Infof("DTS Server starting at %s:%s", host, port)
-			logger.Fatalf("%v", r.Run(host+":"+port))
+			logger.Infof("DTS Server starting at %s:%s", conf.Host, conf.Port)
+			logger.Fatalf("%v", r.Run(conf.Host+":"+conf.Port))
 		}
 	}
 }
