@@ -51,6 +51,6 @@ tmp/
 volume
 
 .terraform
-*.tfstate
+*.tfstate*
 
 *.log
