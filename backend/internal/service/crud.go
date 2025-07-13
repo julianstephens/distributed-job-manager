@@ -1,42 +1,75 @@
 package service
 
 import (
-	"context"
-
-	"github.com/guregu/dynamo/v2"
+	"gorm.io/gorm"
 )
 
-func GetAll[T any](db *dynamo.DB, tableName string) (*[]T, error) {
+type PreloadOptions struct {
+	ShouldPreload bool
+	PreloadQuery  string
+}
+
+func GetAll[T any](db *gorm.DB) (*[]T, error) {
 	var result []T
 
-	if err := db.Table(tableName).Scan().All(context.Background(), dynamo.AWSEncoding(&result)); err != nil {
+	if err := db.Find(&result).Error; err != nil {
 		return nil, err
 	}
 
 	return &result, nil
 }
 
-func FindById[T any](db *dynamo.DB, id string, tableName string) (*T, error) {
+func Find[T any](db *gorm.DB, conditions T, preloadOpts *PreloadOptions) (*T, error) {
 	var result T
-	if err := db.Table(tableName).Get("id", id).One(context.Background(), dynamo.AWSEncoding(&result)); err != nil {
+
+	if preloadOpts != nil && preloadOpts.ShouldPreload {
+		if err := db.Preload(preloadOpts.PreloadQuery).Where(conditions).First(&result).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if err := db.Where(conditions).First(&result).Error; err != nil {
 		return nil, err
 	}
 
 	return &result, nil
 }
 
-func Put[T any](db *dynamo.DB, newResource T, tableName string) (*T, error) {
-	if err := db.Table(tableName).Put(dynamo.AWSEncoding(newResource)).Run(context.Background()); err != nil {
+func FindById[T any](db *gorm.DB, id string) (*T, error) {
+	var result T
+	if err := db.Where("id = ?", id).First(&result).Error; err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func Create[T any](db *gorm.DB, newResource T, conditions ...T) (*T, error) {
+	if err := db.Create(&newResource).Error; err != nil {
 		return nil, err
 	}
 
 	return &newResource, nil
 }
 
-func Delete[T any](db *dynamo.DB, id string, tableName string) error {
-	if err := db.Table(tableName).Delete("id", id).Run(context.Background()); err != nil {
-		return err
+func Update[T any](db *gorm.DB, id string, updates map[string]any) (T, error) {
+	existing, err := FindById[T](db, id)
+	if err != nil {
+		return *new(T), err
 	}
 
-	return nil
+	if err := db.Model(&existing).Updates(updates).Error; err != nil {
+		return *new(T), err
+	}
+
+	return *existing, nil
+}
+
+func Delete[T any](db *gorm.DB, id string, res T) (*T, error) {
+	var result T
+	if err := db.Delete(res, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

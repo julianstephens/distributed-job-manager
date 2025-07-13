@@ -17,6 +17,7 @@ services:
     security_opt:
       - no-new-privileges:true
   backend:
+    container_name: backend
     build:
       context: ./backend
       target: ${ENV}
@@ -27,9 +28,11 @@ services:
       - 8080:8080
     links:
       - localstack
+      - database
     volumes:
       - ./backend/:${APP_HOME}
   frontend:
+    container_name: frontend
     build:
       context: ./frontend
       target: ${ENV}
@@ -43,4 +46,17 @@ services:
       - backend
     volumes:
       - ./frontend/:${APP_HOME}
+  database:
+    image: postgres:alpine
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - dts_pgdata:/var/lib/postgresql/data
+
+volumes:
+  dts_pgdata:
 

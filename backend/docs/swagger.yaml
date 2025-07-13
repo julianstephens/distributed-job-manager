@@ -9,23 +9,23 @@ definitions:
         example: status bad request
         type: string
     type: object
-  httputil.HTTPResponse-array_model_Task:
+  httputil.HTTPResponse-array_table_Task:
     properties:
       data:
         items:
-          $ref: '#/definitions/model.Task'
+          $ref: '#/definitions/table.Task'
         type: array
       message:
         type: string
     type: object
-  httputil.HTTPResponse-model_Task:
+  httputil.HTTPResponse-table_Task:
     properties:
       data:
-        $ref: '#/definitions/model.Task'
+        $ref: '#/definitions/table.Task'
       message:
         type: string
     type: object
-  model.Task:
+  table.Task:
     properties:
       createdAt:
         type: integer
@@ -34,24 +34,20 @@ definitions:
       id:
         type: string
       recurrence:
-        $ref: '#/definitions/model.TaskRecurrence'
+        $ref: '#/definitions/table.TaskRecurrence'
       scheduledTime:
         type: integer
       status:
-        $ref: '#/definitions/model.TaskStatus'
+        $ref: '#/definitions/table.TaskStatus'
       title:
         type: string
       updatedAt:
         type: integer
-      version:
-        type: string
     required:
-    - recurrence
     - scheduledTime
-    - status
     - title
     type: object
-  model.TaskRecurrence:
+  table.TaskRecurrence:
     enum:
     - 0
     - 1
@@ -63,7 +59,7 @@ definitions:
     - Daily
     - Weekly
     - Monthly
-  model.TaskStatus:
+  table.TaskStatus:
     enum:
     - 0
     - 1
@@ -91,7 +87,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httputil.HTTPResponse-array_model_Task'
+            $ref: '#/definitions/httputil.HTTPResponse-array_table_Task'
         "500":
           description: Internal Server Error
           schema:
@@ -101,13 +97,20 @@ paths:
       summary: Get all tasks
       tags:
       - tasks
-    put:
-      description: creates or updates a task
+    post:
+      description: creates a new task
+      parameters:
+      - description: Task data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/table.Task'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httputil.HTTPResponse-model_Task'
+            $ref: '#/definitions/httputil.HTTPResponse-table_Task'
         "400":
           description: Bad Request
           schema:
@@ -118,7 +121,7 @@ paths:
             $ref: '#/definitions/httputil.HTTPError'
       security:
       - ApiKey: []
-      summary: Put a task
+      summary: Create a task
       tags:
       - tasks
   /tasks/{task_id}:
@@ -134,7 +137,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httputil.HTTPResponse-model_Task'
+            $ref: '#/definitions/httputil.HTTPResponse-table_Task'
         "400":
           description: Bad Request
           schema:
@@ -160,7 +163,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httputil.HTTPResponse-model_Task'
+            $ref: '#/definitions/httputil.HTTPResponse-table_Task'
         "500":
           description: Internal Server Error
           schema:

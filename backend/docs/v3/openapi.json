@@ -18,7 +18,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/httputil.HTTPResponse-array_model_Task"
+                  "$ref" : "#/components/schemas/httputil.HTTPResponse-array_table_Task"
                 }
               }
             },
@@ -43,12 +43,23 @@
       },
       "put" : {
         "description" : "creates or updates a task",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/table.Task"
+              }
+            }
+          },
+          "description" : "Task data",
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/httputil.HTTPResponse-model_Task"
+                  "$ref" : "#/components/schemas/httputil.HTTPResponse-table_Task"
                 }
               }
             },
@@ -79,7 +90,8 @@
           "ApiKey" : [ ]
         } ],
         "summary" : "Put a task",
-        "tags" : [ "tasks" ]
+        "tags" : [ "tasks" ],
+        "x-codegen-request-body-name" : "data"
       }
     },
     "/tasks/{task_id}" : {
@@ -99,7 +111,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/httputil.HTTPResponse-model_Task"
+                  "$ref" : "#/components/schemas/httputil.HTTPResponse-table_Task"
                 }
               }
             },
@@ -148,7 +160,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/httputil.HTTPResponse-model_Task"
+                  "$ref" : "#/components/schemas/httputil.HTTPResponse-table_Task"
                 }
               }
             },
@@ -188,11 +200,11 @@
         },
         "type" : "object"
       },
-      "httputil.HTTPResponse-array_model_Task" : {
+      "httputil.HTTPResponse-array_table_Task" : {
         "properties" : {
           "data" : {
             "items" : {
-              "$ref" : "#/components/schemas/model.Task"
+              "$ref" : "#/components/schemas/table.Task"
             },
             "type" : "array"
           },
@@ -202,10 +214,10 @@
         },
         "type" : "object"
       },
-      "httputil.HTTPResponse-model_Task" : {
+      "httputil.HTTPResponse-table_Task" : {
         "properties" : {
           "data" : {
-            "$ref" : "#/components/schemas/model.Task"
+            "$ref" : "#/components/schemas/table.Task"
           },
           "message" : {
             "type" : "string"
@@ -213,7 +225,7 @@
         },
         "type" : "object"
       },
-      "model.Task" : {
+      "table.Task" : {
         "properties" : {
           "createdAt" : {
             "type" : "integer"
@@ -225,33 +237,30 @@
             "type" : "string"
           },
           "recurrence" : {
-            "$ref" : "#/components/schemas/model.TaskRecurrence"
+            "$ref" : "#/components/schemas/table.TaskRecurrence"
           },
           "scheduledTime" : {
             "type" : "integer"
           },
           "status" : {
-            "$ref" : "#/components/schemas/model.TaskStatus"
+            "$ref" : "#/components/schemas/table.TaskStatus"
           },
           "title" : {
             "type" : "string"
           },
           "updatedAt" : {
             "type" : "integer"
-          },
-          "version" : {
-            "type" : "string"
           }
         },
-        "required" : [ "recurrence", "scheduledTime", "status", "title" ],
+        "required" : [ "scheduledTime", "title" ],
         "type" : "object"
       },
-      "model.TaskRecurrence" : {
+      "table.TaskRecurrence" : {
         "enum" : [ 0, 1, 2, 3 ],
         "type" : "integer",
         "x-enum-varnames" : [ "Once", "Daily", "Weekly", "Monthly" ]
       },
-      "model.TaskStatus" : {
+      "table.TaskStatus" : {
         "enum" : [ 0, 1, 2, 3, 4 ],
         "type" : "integer",
         "x-enum-varnames" : [ "StatusPending", "StatusInProgress", "StatusCompleted", "StatusFailed", "StatusCancelled" ]

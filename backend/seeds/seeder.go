@@ -4,19 +4,19 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/guregu/dynamo/v2"
 	"github.com/julianstephens/distributed-task-scheduler/backend/internal/config"
 	"github.com/julianstephens/distributed-task-scheduler/backend/pkg/logger"
 	"github.com/julianstephens/distributed-task-scheduler/backend/pkg/model"
+	"gorm.io/gorm"
 )
 
 type Seed struct {
-	db    *dynamo.DB
+	db    *gorm.DB
 	conf  *model.Config
 	count int
 }
 
-func Execute(db *dynamo.DB, seedRowCount int, seedMethodNames ...string) {
+func Execute(db *gorm.DB, seedRowCount int, seedMethodNames ...string) {
 	s := Seed{db: db, conf: config.GetConfig(), count: seedRowCount}
 
 	seedType := reflect.TypeOf(s)

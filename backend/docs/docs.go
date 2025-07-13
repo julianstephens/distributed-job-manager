@@ -31,7 +31,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httputil.HTTPResponse-array_model_Task"
+                            "$ref": "#/definitions/httputil.HTTPResponse-array_table_Task"
                         }
                     },
                     "500": {
@@ -42,22 +42,33 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
+            "post": {
                 "security": [
                     {
                         "ApiKey": []
                     }
                 ],
-                "description": "creates or updates a task",
+                "description": "creates a new task",
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Put a task",
+                "summary": "Create a task",
+                "parameters": [
+                    {
+                        "description": "Task data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/table.Task"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httputil.HTTPResponse-model_Task"
+                            "$ref": "#/definitions/httputil.HTTPResponse-table_Task"
                         }
                     },
                     "400": {
@@ -100,7 +111,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httputil.HTTPResponse-model_Task"
+                            "$ref": "#/definitions/httputil.HTTPResponse-table_Task"
                         }
                     },
                     "500": {
@@ -135,7 +146,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httputil.HTTPResponse-model_Task"
+                            "$ref": "#/definitions/httputil.HTTPResponse-table_Task"
                         }
                     },
                     "400": {
@@ -168,13 +179,13 @@ const docTemplate = `{
                 }
             }
         },
-        "httputil.HTTPResponse-array_model_Task": {
+        "httputil.HTTPResponse-array_table_Task": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Task"
+                        "$ref": "#/definitions/table.Task"
                     }
                 },
                 "message": {
@@ -182,23 +193,21 @@ const docTemplate = `{
                 }
             }
         },
-        "httputil.HTTPResponse-model_Task": {
+        "httputil.HTTPResponse-table_Task": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/model.Task"
+                    "$ref": "#/definitions/table.Task"
                 },
                 "message": {
                     "type": "string"
                 }
             }
         },
-        "model.Task": {
+        "table.Task": {
             "type": "object",
             "required": [
-                "recurrence",
                 "scheduledTime",
-                "status",
                 "title"
             ],
             "properties": {
@@ -212,26 +221,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "recurrence": {
-                    "$ref": "#/definitions/model.TaskRecurrence"
+                    "$ref": "#/definitions/table.TaskRecurrence"
                 },
                 "scheduledTime": {
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/model.TaskStatus"
+                    "$ref": "#/definitions/table.TaskStatus"
                 },
                 "title": {
                     "type": "string"
                 },
                 "updatedAt": {
                     "type": "integer"
-                },
-                "version": {
-                    "type": "string"
                 }
             }
         },
-        "model.TaskRecurrence": {
+        "table.TaskRecurrence": {
             "type": "integer",
             "enum": [
                 0,
@@ -246,7 +252,7 @@ const docTemplate = `{
                 "Monthly"
             ]
         },
-        "model.TaskStatus": {
+        "table.TaskStatus": {
             "type": "integer",
             "enum": [
                 0,

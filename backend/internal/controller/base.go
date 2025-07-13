@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"github.com/guregu/dynamo/v2"
 	"github.com/julianstephens/distributed-task-scheduler/backend/pkg/model"
+	"gorm.io/gorm"
 )
 
 type Controller struct {
-	DB     *dynamo.DB
+	DB     *gorm.DB
 	Config *model.Config
 }
