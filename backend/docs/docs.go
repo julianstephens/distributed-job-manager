@@ -75,7 +75,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/tasks/:id": {
+        "/tasks/{task_id}": {
             "get": {
                 "security": [
                     {
@@ -122,6 +122,15 @@ const docTemplate = `{
                     "tasks"
                 ],
                 "summary": "Delete a task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -243,13 +252,15 @@ const docTemplate = `{
                 0,
                 1,
                 2,
-                3
+                3,
+                4
             ],
             "x-enum-varnames": [
                 "StatusPending",
                 "StatusInProgress",
                 "StatusCompleted",
-                "StatusFailed"
+                "StatusFailed",
+                "StatusCancelled"
             ]
         }
     },

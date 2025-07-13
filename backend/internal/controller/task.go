@@ -40,9 +40,9 @@ func (base *Controller) GetTasks(c *gin.Context) {
 // @Security ApiKey
 // @Success 200 {object} httputil.HTTPResponse[model.Task]
 // @Failure 500 {object} httputil.HTTPError
-// @Router /tasks/:id [get]
+// @Router /tasks/{task_id} [get]
 func (base *Controller) GetTask(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("task_id")
 	logger.Infof("retrieving task %s", id)
 
 	task, err := service.FindById[model.Task](base.DB, id, base.Config.TaskTableName)
@@ -99,13 +99,14 @@ func (base *Controller) PutTask(c *gin.Context) {
 // @Summary Delete a task
 // @Description deletes a specific task
 // @Tags tasks
+// @Param task_id path string true "Task ID"
 // @Security ApiKey
 // @Success 200 {object} httputil.HTTPResponse[model.Task]
 // @Failure 400 {object} httputil.HTTPError
 // @Failure 500 {object} httputil.HTTPError
-// @Router /tasks/:id [delete]
+// @Router /tasks/{task_id} [delete]
 func (base *Controller) DeleteTask(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("task_id")
 	logger.Infof("deleting task %s", id)
 
 	err := service.Delete[model.Task](base.DB, id, base.Config.TaskTableName)

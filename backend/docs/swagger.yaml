@@ -69,12 +69,14 @@ definitions:
     - 1
     - 2
     - 3
+    - 4
     type: integer
     x-enum-varnames:
     - StatusPending
     - StatusInProgress
     - StatusCompleted
     - StatusFailed
+    - StatusCancelled
 host: localhost:8080
 info:
   contact: {}
@@ -119,9 +121,15 @@ paths:
       summary: Put a task
       tags:
       - tasks
-  /tasks/:id:
+  /tasks/{task_id}:
     delete:
       description: deletes a specific task
+      parameters:
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: string
       responses:
         "200":
           description: OK

@@ -93,7 +93,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tasks/:id": {
+    "/tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -146,7 +146,10 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path?: never;
+                path: {
+                    /** @description Task ID */
+                    task_id: string;
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -273,7 +276,7 @@ export interface components {
         /** @enum {integer} */
         "model.TaskRecurrence": 0 | 1 | 2 | 3;
         /** @enum {integer} */
-        "model.TaskStatus": 0 | 1 | 2 | 3;
+        "model.TaskStatus": 0 | 1 | 2 | 3 | 4;
     };
     responses: never;
     parameters: never;

@@ -54,9 +54,9 @@ func Setup(conf *model.Config) *gin.Engine {
 	taskGroup := baseGroup.Group("/tasks")
 	{
 		taskGroup.GET("", api.GetTasks)
-		taskGroup.GET("/:id", api.GetTask)
+		taskGroup.GET("/:task_id", api.GetTask)
 		taskGroup.PUT("/", api.PutTask)
-		taskGroup.DELETE("/:id", api.DeleteTask)
+		taskGroup.DELETE("/:task_id", api.DeleteTask)
 	}
 
 	return r

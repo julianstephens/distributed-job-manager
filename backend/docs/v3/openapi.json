@@ -82,9 +82,18 @@
         "tags" : [ "tasks" ]
       }
     },
-    "/tasks/:id" : {
+    "/tasks/{task_id}" : {
       "delete" : {
         "description" : "deletes a specific task",
+        "parameters" : [ {
+          "description" : "Task ID",
+          "in" : "path",
+          "name" : "task_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -243,9 +252,9 @@
         "x-enum-varnames" : [ "Once", "Daily", "Weekly", "Monthly" ]
       },
       "model.TaskStatus" : {
-        "enum" : [ 0, 1, 2, 3 ],
+        "enum" : [ 0, 1, 2, 3, 4 ],
         "type" : "integer",
-        "x-enum-varnames" : [ "StatusPending", "StatusInProgress", "StatusCompleted", "StatusFailed" ]
+        "x-enum-varnames" : [ "StatusPending", "StatusInProgress", "StatusCompleted", "StatusFailed", "StatusCancelled" ]
       }
     },
     "securitySchemes" : {
