@@ -218,13 +218,17 @@ export const TaskTable = () => {
             <Table.Body>
               {isLoading ? (
                 <Table.Row>
-                  <Table.Cell colSpan={3} textAlign="center">
+                  <Table.Cell colSpan={6} textAlign="center">
                     Loading...
                   </Table.Cell>
                 </Table.Row>
               ) : error ? (
                 <Table.Row>
-                  <Table.Cell colSpan={3}>Error: {error.message}</Table.Cell>
+                  <Table.Cell colSpan={6}>Error: {error.message}</Table.Cell>
+                </Table.Row>
+              ) : !filteredData || filteredData.length === 0 ? (
+                <Table.Row>
+                  <Table.Cell colSpan={6}>No tasks to display</Table.Cell>
                 </Table.Row>
               ) : (
                 getPagedData()?.map((task) => (
@@ -312,6 +316,7 @@ export const TaskTable = () => {
         buttonLabel="Cancel Task"
         taskId={taskContext}
         actionCallback={(taskId?: string) => {
+          // TODO: Implement task cancellation API call
           console.log("Cancel Task", taskId);
         }}
       />

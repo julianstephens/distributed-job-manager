@@ -55,7 +55,12 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            /** @description Task data */
+            requestBody: {
+                content: {
+                    "*/*": components["schemas"]["model.Task"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {

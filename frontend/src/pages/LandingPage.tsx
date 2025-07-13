@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout";
 import { TaskTable } from "@/components/TaskTable";
 
-const App = () => {
+const LandingPage = () => {
   return (
     <Layout title="Task List">
       <TaskTable />
@@ -9,4 +9,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default LandingPage;
