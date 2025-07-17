@@ -1,0 +1,23 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for managing job submission",
+        "title": "DTS Job Service API",
+        "contact": {},
+        "version": "0.1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {},
+    "securityDefinitions": {
+        "ApiKey": {
+            "description": "User-specific API key",
+            "type": "apiKey",
+            "name": "X-API-KEY",
+            "in": "header"
+        }
+    }
+}

@@ -12,41 +12,43 @@ services:
       - EXTRA_CORS_ALLOWED_ORIGINS=http://localhost:5173
       - EXTRA_CORS_ALLOWED_HEADERS=x-api-key
     volumes:
-      # - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"  # required for some AWS services like AWS Lambda
     security_opt:
       - no-new-privileges:true
-  backend:
-    container_name: backend
+  jobsvc:
+    container_name: jobsvc
     build:
-      context: ./backend
+      context: .
+      dockerfile: services/jobsvc/Dockerfile
       target: ${ENV}
       args:
         APP_HOME: ${APP_HOME}
     env_file: ".env"
     ports:
-      - 8080:8080
+      - ${JOB_SERVICE_PORT}:${JOB_SERVICE_PORT}
     links:
       - localstack
-      - database
+      - cassandra
     volumes:
-      - ./backend/:${APP_HOME}
-  frontend:
-    container_name: frontend
-    build:
-      context: ./frontend
-      target: ${ENV}
-      args:
-        APP_HOME: ${APP_HOME}
-    env_file: ".env"
+      - .:${APP_HOME}
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    restart: always
     ports:
-      - 3000:3000
-      - 5173:5173
-    links:
-      - backend
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${DB_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
+    configs:
+      - source: rabbitmq-plugins
+        target: /etc/rabbitmq/enabled_plugins
     volumes:
-      - ./frontend/:${APP_HOME}
+      - rabbitmq-lib:/var/lib/rabbitmq/
+      - rabbitmq-log:/var/log/rabbitmq
   database:
+    container_name: database
     image: postgres:alpine
     ports:
       - 5432:5432
@@ -56,7 +58,26 @@ services:
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - dts_pgdata:/var/lib/postgresql/data
+  cassandra:
+    container_name: cassandra
+    image: cassandra:latest
+    ports:
+      - 9042:9042
+    environment:
+      - CASSANDRA_USER=${DB_USERNAME}
+      - CASSANDRA_PASSWORD=${CASS_PASSWORD}
+    volumes:
+      - dts_cassdata:/var/lib/cassandra
+
+configs:
+  rabbitmq-plugins:
+    content: "[rabbitmq_management]."
 
 volumes:
   dts_pgdata:
+  dts_cassdata:
+  rabbitmq-lib:
+    driver: local
+  rabbitmq-log:
+    driver: local
 

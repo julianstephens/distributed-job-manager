@@ -1,0 +1,17 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for managing job submission
+  title: DTS Job Service API
+  version: 0.1.0
+paths: {}
+schemes:
+- http
+securityDefinitions:
+  ApiKey:
+    description: User-specific API key
+    in: header
+    name: X-API-KEY
+    type: apiKey
+swagger: "2.0"
