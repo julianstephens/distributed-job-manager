@@ -14,6 +14,12 @@ type Job struct {
 	ExecutionTime time.Time `json:"execution_time"`
 }
 
+type JobSchedule struct {
+	JobID       string    `json:"job_id"`
+	NextRunTime time.Time `json:"next_run_time"`
+	LastRunTime time.Time `json:"last_run_time"`
+}
+
 // type JobExecution struct {
 // 	ExecutionID  string
 // 	JobID        string
@@ -22,12 +28,6 @@ type Job struct {
 // 	EndTime      time.Time
 // 	Status       string
 // 	ErrorMessage string
-// }
-
-// type JobSchedule struct {
-// 	JobID       string
-// 	NextRunTime time.Time
-// 	LastRunTime time.Time
 // }
 
 // type WorkerNode struct {

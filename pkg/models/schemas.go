@@ -25,6 +25,21 @@ var (
 		},
 	})
 
+	JobSchedules = table.New(table.Metadata{
+		Name: "job_schedules",
+		Columns: []string{
+			"job_id",
+			"next_run_time",
+			"last_run_time",
+		},
+		PartKey: []string{
+			"job_id",
+		},
+		SortKey: []string{
+			"next_run_time",
+		},
+	})
+
 	Users = table.New(table.Metadata{
 		Name: "users",
 		Columns: []string{

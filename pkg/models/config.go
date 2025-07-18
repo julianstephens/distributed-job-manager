@@ -19,6 +19,14 @@ type CassandraConfig struct {
 	Keyspace string `env:"CASS_KEYSPACE"`
 }
 
+type RabbitConfig struct {
+	Host     string `env:"RABBIT_HOST"`
+	Port     string `env:"RABBIT_PORT"`
+	Username string `env:"DB_USERNAME"`
+	Password string `env:"RABBIT_PASSWORD"`
+	Name     string `env:RABBIT_QUEUE_NAME`
+}
+
 type Config struct {
 	Host             string `env:"HOST" envDefault:"0.0.0.0"`
 	Port             string `env:"PORT" envDefault:"8080"`
@@ -31,4 +39,5 @@ type Config struct {
 	Database         DatabaseConfig
 	JobService       JobServiceConfig
 	Cassandra        CassandraConfig
+	Rabbit           RabbitConfig
 }

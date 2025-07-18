@@ -22,7 +22,7 @@ import (
 func (base *Controller) GetJobs(c *gin.Context) {
 	user_id := c.Query("user_id")
 	if user_id == "" {
-		httputil.NewError(c, http.StatusBadRequest, errors.New("no user_id provided"))
+		httputil.NewError(c, http.StatusBadRequest, errors.New("user_id query param is required"))
 		return
 	}
 
@@ -79,6 +79,23 @@ func (base *Controller) CreateJob(c *gin.Context) {
 	job.JobID = ulid.Make().String()
 
 	q := base.DB.Client.Query(models.Jobs.Insert()).BindStruct(job)
+	if err := q.ExecRelease(); err != nil {
+		httputil.NewError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	jobSchedule := models.JobSchedule{
+		JobID: job.JobID,
+	}
+
+	var existingJobSchedule models.JobSchedule
+	stmt, _ := qb.Select(models.Jobs.Name()).Where(qb.EqNamed("job_id", job.JobID)).AllowFiltering().ToCql()
+	if err := base.DB.Client.Query(stmt, []string{"job_id"}).Bind(job.JobID).Get(&existingJobSchedule); err != nil {
+		httputil.NewError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	q = base.DB.Client.Query(models.JobSchedules.Insert()).BindStruct(jobSchedule)
 	if err := q.ExecRelease(); err != nil {
 		httputil.NewError(c, http.StatusInternalServerError, err)
 		return
