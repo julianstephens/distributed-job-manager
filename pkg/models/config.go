@@ -37,6 +37,8 @@ type Config struct {
 	TaskTableVersion string `env:"TASK_TABLE_VERSION"`
 	Env              string `env:"ENV" envDefault:"development"`
 	TempDir          string `env:"TEMP_DIR"`
+	SandboxCount     int    `env:"SANDBOX_COUNT"`
+	WorkerID         string `env:"WORKER_ID"`
 	Database         DatabaseConfig
 	JobService       JobServiceConfig
 	Cassandra        CassandraConfig

@@ -14,12 +14,6 @@ type Job struct {
 	ExecutionTime time.Time `json:"execution_time"`
 }
 
-type JobSchedule struct {
-	JobID       string    `json:"job_id"`
-	NextRunTime time.Time `json:"next_run_time"`
-	LastRunTime time.Time `json:"last_run_time"`
-}
-
 func (j *Job) GetJobFrequencyIntervalSeconds() int {
 	switch j.Frequency {
 	case "hourly":
@@ -30,15 +24,21 @@ func (j *Job) GetJobFrequencyIntervalSeconds() int {
 	return -1
 }
 
-// type JobExecution struct {
-// 	ExecutionID  string
-// 	JobID        string
-// 	WorkerID     string
-// 	StartTime    time.Time
-// 	EndTime      time.Time
-// 	Status       string
-// 	ErrorMessage string
-// }
+type JobSchedule struct {
+	JobID       string    `json:"job_id"`
+	NextRunTime time.Time `json:"next_run_time"`
+	LastRunTime time.Time `json:"last_run_time"`
+}
+
+type JobExecution struct {
+	ExecutionID  string    `json:"execution_id"`
+	JobID        string    `json:"job_id"`
+	WorkerID     string    `json:"worker_id"`
+	StartTime    time.Time `json:"start_time"`
+	EndTime      time.Time `json:"end_time"`
+	Status       string    `json:"status"`
+	ErrorMessage string    `json:"error_message"`
+}
 
 // type WorkerNode struct {
 // 	WorkerID      string

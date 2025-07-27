@@ -6,4 +6,3 @@ func GetSupportedLanguages() map[string]string {
 		"golang": ".go",
 	}
 }
-

@@ -40,6 +40,26 @@ var (
 		},
 	})
 
+	JobExecutions = table.New(table.Metadata{
+		Name: "job_executions",
+		Columns: []string{
+			"execution_id",
+			"job_id",
+			"worker_id",
+			"start_time",
+			"end_time",
+			"status",
+			"error_message",
+		},
+		PartKey: []string{
+			"job_id",
+		},
+		SortKey: []string{
+			"worker_id",
+			"status",
+		},
+	})
+
 	Users = table.New(table.Metadata{
 		Name: "users",
 		Columns: []string{

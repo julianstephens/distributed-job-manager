@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -83,6 +84,14 @@ func (base *Controller) CreateJob(c *gin.Context) {
 	if err := parser.Parse(job.Payload); err != nil {
 		httputil.NewError(c, http.StatusBadRequest, err)
 		return
+	}
+
+	supportedLanguages := utils.GetSupportedLanguages()
+	for _, block := range parser.Result {
+		if supportedLanguages[block.Language] == "" {
+			httputil.NewError(c, http.StatusBadRequest, fmt.Errorf("%s is not a supported code language", block.Language))
+			return
+		}
 	}
 
 	job.Payload = parser.SanitizedInput

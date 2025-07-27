@@ -15,6 +15,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"  # required for some AWS services like AWS Lambda
     security_opt:
       - no-new-privileges:true
+
   jobsvc:
     container_name: jobsvc
     build:
@@ -31,6 +32,7 @@ services:
       - cassandra
     volumes:
       - .:${APP_HOME}
+
   schedulingsvc:
     container_name: schedulingsvc
     build:
@@ -47,6 +49,24 @@ services:
       - rabbitmq
     volumes:
       - .:${APP_HOME}
+
+  worker:
+    container_name: worker
+    build:
+      context: .
+      dockerfile: services/workersvc/Dockerfile
+      target: ${ENV}
+      args:
+        APP_HOME: ${APP_HOME}
+    env_file: ".env"
+    ports:
+      - ${WORKER_SERVICE_PORT}:${WORKER_SERVICE_PORT}
+    links:
+      - cassandra
+      - rabbitmq
+    volumes:
+      - .:${APP_HOME}
+
   rabbitmq:
     image: rabbitmq:latest
     container_name: rabbitmq
@@ -63,6 +83,7 @@ services:
     volumes:
       - rabbitmq-lib:/var/lib/rabbitmq/
       - rabbitmq-log:/var/log/rabbitmq
+
   database:
     container_name: database
     image: postgres:alpine
@@ -74,6 +95,7 @@ services:
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - djm_pgdata:/var/lib/postgresql/data
+
   cassandra:
     container_name: cassandra
     image: cassandra:latest
