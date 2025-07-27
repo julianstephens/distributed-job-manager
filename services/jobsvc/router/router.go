@@ -6,11 +6,11 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/controller"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/middleware"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/models"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/store"
-	docs "github.com/julianstephens/distributed-task-scheduler/services/jobsvc/docs"
+	"github.com/julianstephens/distributed-job-manager/pkg/controller"
+	"github.com/julianstephens/distributed-job-manager/pkg/middleware"
+	"github.com/julianstephens/distributed-job-manager/pkg/models"
+	"github.com/julianstephens/distributed-job-manager/pkg/store"
+	docs "github.com/julianstephens/distributed-job-manager/services/jobsvc/docs"
 )
 
 const BasePath = "/api/v1"

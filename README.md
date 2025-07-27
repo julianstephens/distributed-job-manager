@@ -1,35 +1,10 @@
-# distributed-task-scheduler
+# distributed-job-manager
 
-```
-{
-   "title":  "Download file 1",
-   "job": "curl https://dl.com/file1"
-}
+## Setup
 
-Runtime: 60min
+Pre-requisites:
 
+    -  docker
 
-{
-   "title":  "Download file 2",
-   "job": "curl https://dl.com/file2"
-}
-
-Runtime: 2min
-
-
-```
-
-Job Worker : lambda
-
-/job_worker/submit => { job_id: "123" }
-
-Queue: - Task 1 - Task 2 - Task 3
-
-Worker 1 {job_id: "123", job: "curl https://dl.com/file2"}
-Worker 2
-
----
-
-Worker 3
-...
-Worker N
+1. `git clone https://github.com/julianstephens/distributed-job-manager.git`
+2. `docker compose up -d`

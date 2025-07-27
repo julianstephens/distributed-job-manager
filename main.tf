@@ -1,5 +1,5 @@
 locals {
-  app_name = "dts"
+  app_name = "djm"
 }
 
 resource "aws_ssm_parameter" "api_key" {

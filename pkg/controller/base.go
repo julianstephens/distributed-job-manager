@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/julianstephens/distributed-task-scheduler/pkg/models"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/store"
+	"github.com/julianstephens/distributed-job-manager/pkg/models"
+	"github.com/julianstephens/distributed-job-manager/pkg/store"
 )
 
 type Controller struct {

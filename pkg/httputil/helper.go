@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/logger"
+	"github.com/julianstephens/distributed-job-manager/pkg/logger"
 )
 
 type Item struct {

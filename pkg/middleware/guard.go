@@ -8,9 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/gin-gonic/gin"
-	internalssm "github.com/julianstephens/distributed-task-scheduler/pkg/aws/ssm"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/config"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/httputil"
+	internalssm "github.com/julianstephens/distributed-job-manager/pkg/aws/ssm"
+	"github.com/julianstephens/distributed-job-manager/pkg/config"
+	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
 )
 
 func AuthGuard() gin.HandlerFunc {

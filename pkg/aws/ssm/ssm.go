@@ -5,9 +5,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsssm "github.com/aws/aws-sdk-go-v2/service/ssm"
-	internalaws "github.com/julianstephens/distributed-task-scheduler/pkg/aws"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/config"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/logger"
+	internalaws "github.com/julianstephens/distributed-job-manager/pkg/aws"
+	"github.com/julianstephens/distributed-job-manager/pkg/config"
+	"github.com/julianstephens/distributed-job-manager/pkg/logger"
 )
 
 var (

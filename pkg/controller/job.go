@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/httputil"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/models"
+	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
+	"github.com/julianstephens/distributed-job-manager/pkg/models"
+	"github.com/julianstephens/distributed-job-manager/pkg/utils"
 	"github.com/oklog/ulid/v2"
-	"github.com/scylladb/gocqlx/qb"
+	"github.com/scylladb/gocqlx/v3/qb"
 )
 
 // GetJobs godoc
@@ -78,6 +79,14 @@ func (base *Controller) CreateJob(c *gin.Context) {
 	}
 	job.JobID = ulid.Make().String()
 
+	parser := &utils.Parser{}
+	if err := parser.Parse(job.Payload); err != nil {
+		httputil.NewError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	job.Payload = parser.SanitizedInput
+
 	q := base.DB.Client.Query(models.Jobs.Insert()).BindStruct(job)
 	if err := q.ExecRelease(); err != nil {
 		httputil.NewError(c, http.StatusInternalServerError, err)
@@ -85,14 +94,8 @@ func (base *Controller) CreateJob(c *gin.Context) {
 	}
 
 	jobSchedule := models.JobSchedule{
-		JobID: job.JobID,
-	}
-
-	var existingJobSchedule models.JobSchedule
-	stmt, _ := qb.Select(models.Jobs.Name()).Where(qb.EqNamed("job_id", job.JobID)).AllowFiltering().ToCql()
-	if err := base.DB.Client.Query(stmt, []string{"job_id"}).Bind(job.JobID).Get(&existingJobSchedule); err != nil {
-		httputil.NewError(c, http.StatusBadRequest, err)
-		return
+		JobID:       job.JobID,
+		NextRunTime: job.ExecutionTime,
 	}
 
 	q = base.DB.Client.Query(models.JobSchedules.Insert()).BindStruct(jobSchedule)

@@ -20,6 +20,16 @@ type JobSchedule struct {
 	LastRunTime time.Time `json:"last_run_time"`
 }
 
+func (j *Job) GetJobFrequencyIntervalSeconds() int {
+	switch j.Frequency {
+	case "hourly":
+		return int(time.Hour.Seconds())
+	case "daily":
+		return int(time.Hour.Seconds() * 24)
+	}
+	return -1
+}
+
 // type JobExecution struct {
 // 	ExecutionID  string
 // 	JobID        string

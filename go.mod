@@ -1,4 +1,4 @@
-module github.com/julianstephens/distributed-task-scheduler
+module github.com/julianstephens/distributed-job-manager
 
 go 1.24.5
 
@@ -30,6 +30,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.34.0 // indirect
 	github.com/aws/smithy-go v1.22.4 // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
@@ -43,6 +44,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
@@ -55,6 +57,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/scylladb/gocqlx v1.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
@@ -74,6 +77,7 @@ require (
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/gin-gonic/gin v1.10.1
 	github.com/gocql/gocql v1.7.0
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/scylladb/go-reflectx v1.0.1 // indirect
 	github.com/scylladb/gocqlx/v3 v3.0.2
 	golang.org/x/sys v0.34.0 // indirect

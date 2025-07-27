@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/config"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/httputil"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/logger"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/store"
-	"github.com/julianstephens/distributed-task-scheduler/services/jobsvc/router"
+	"github.com/julianstephens/distributed-job-manager/pkg/config"
+	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
+	"github.com/julianstephens/distributed-job-manager/pkg/logger"
+	"github.com/julianstephens/distributed-job-manager/pkg/store"
+	"github.com/julianstephens/distributed-job-manager/services/jobsvc/router"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )

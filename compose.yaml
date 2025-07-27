@@ -73,7 +73,7 @@ services:
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_DB=${DB_NAME}
     volumes:
-      - dts_pgdata:/var/lib/postgresql/data
+      - djm_pgdata:/var/lib/postgresql/data
   cassandra:
     container_name: cassandra
     image: cassandra:latest
@@ -83,15 +83,15 @@ services:
       - CASSANDRA_USER=${DB_USERNAME}
       - CASSANDRA_PASSWORD=${CASS_PASSWORD}
     volumes:
-      - dts_cassdata:/var/lib/cassandra
+      - djm_cassdata:/var/lib/cassandra
 
 configs:
   rabbitmq-plugins:
     content: "[rabbitmq_management]."
 
 volumes:
-  dts_pgdata:
-  dts_cassdata:
+  djm_pgdata:
+  djm_cassdata:
   rabbitmq-lib:
     driver: local
   rabbitmq-log:

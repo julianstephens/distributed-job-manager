@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/logger"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/models"
+	"github.com/julianstephens/distributed-job-manager/pkg/logger"
+	"github.com/julianstephens/distributed-job-manager/pkg/models"
 )
 
 var (

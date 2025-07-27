@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/gocql/gocql"
-	"github.com/julianstephens/distributed-task-scheduler/pkg/config"
+	"github.com/julianstephens/distributed-job-manager/pkg/config"
 	"github.com/scylladb/gocqlx/v3"
 )
 

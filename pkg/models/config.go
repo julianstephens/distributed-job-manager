@@ -24,7 +24,7 @@ type RabbitConfig struct {
 	Port     string `env:"RABBIT_PORT"`
 	Username string `env:"DB_USERNAME"`
 	Password string `env:"RABBIT_PASSWORD"`
-	Name     string `env:RABBIT_QUEUE_NAME`
+	Name     string `env:"RABBIT_QUEUE_NAME"`
 }
 
 type Config struct {
@@ -36,6 +36,7 @@ type Config struct {
 	TaskTableName    string `env:"TASK_TABLE_NAME"`
 	TaskTableVersion string `env:"TASK_TABLE_VERSION"`
 	Env              string `env:"ENV" envDefault:"development"`
+	TempDir          string `env:"TEMP_DIR"`
 	Database         DatabaseConfig
 	JobService       JobServiceConfig
 	Cassandra        CassandraConfig
