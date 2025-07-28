@@ -1,12 +1,10 @@
-import type { paths } from "@/lib/api/openapi.d.ts";
 import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
-import createFetchClient, { type Middleware } from "openapi-fetch";
-import createClient from "openapi-react-query";
+import axios from "axios";
 
 let _initialized = false;
 let client: SSMClient | null = null;
 
-const getClient = () => {
+const getSSMClient = () => {
   if (!_initialized) {
     client = new SSMClient({
       region: "us-east-1",
@@ -23,7 +21,7 @@ const getClient = () => {
 };
 
 const getApiKey = async () => {
-  const ssmClient = getClient();
+  const ssmClient = getSSMClient();
   if (!ssmClient) throw new Error("missing ssm client");
   const input = { Name: "api_key", WithDecryption: true };
   const command = new GetParameterCommand(input);
@@ -36,23 +34,21 @@ const getApiKey = async () => {
   }
 };
 
-const myMiddleware: Middleware = {
-  async onRequest({ request }) {
-    try {
-      const apiKey = await getApiKey();
-      if (apiKey) {
-        request.headers.set("X-API-Key", apiKey);
-      }
-      return request;
-    } catch {
-      throw new Error("Unable to authenticate");
-    }
-  },
-};
-
-export const fetchClient = createFetchClient<paths>({
-  baseUrl: "http://localhost:8080/api/v1",
+export const $api = axios.create({
+  baseURL: "/api/v1",
+  timeout: 1000 * 30,
 });
-fetchClient.use(myMiddleware);
 
-export const $api = createClient(fetchClient);
+$api.interceptors.request.use(
+  async (config) => {
+    const token = await getApiKey();
+    if (token) {
+      config.headers.Authorization = token;
+    }
+    return config;
+  },
+  (error) => {
+    console.error("Request error:", error);
+    return Promise.reject(error);
+  }
+);

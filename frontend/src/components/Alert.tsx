@@ -5,13 +5,13 @@ export const NegativeAlertDialog = ({
   setOpen,
   buttonLabel,
   actionCallback,
-  taskId,
+  jobId,
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
   buttonLabel?: string;
-  actionCallback: (taskId?: string) => void;
-  taskId?: string;
+  actionCallback: (jobId?: string) => void;
+  jobId?: string;
 }) => {
   return (
     <Dialog.Root
@@ -31,7 +31,7 @@ export const NegativeAlertDialog = ({
             <Dialog.Body>
               <p>
                 This action cannot be undone. This will permanently delete your
-                task and cancel any associated work.
+                job and cancel any associated work.
               </p>
             </Dialog.Body>
             <Dialog.Footer>
@@ -41,7 +41,7 @@ export const NegativeAlertDialog = ({
               <Button
                 colorPalette="red"
                 onClick={() => {
-                  actionCallback(taskId);
+                  actionCallback(jobId);
                   setOpen(false);
                 }}
               >

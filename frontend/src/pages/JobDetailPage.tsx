@@ -1,9 +1,8 @@
+import { JobForm } from "@/components/JobForm";
 import { Layout } from "@/components/layout";
-import { TaskForm } from "@/components/TaskForm";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { Task } from "@/lib/api/aliases";
-import { $api } from "@/lib/api/client";
-import { convertUnixToDate, TaskRecurrence, TaskStatus } from "@/lib/utils";
+import { useJob } from "@/lib/api/hooks";
+import type { Job } from "@/lib/types";
 import {
   Badge,
   Button,
@@ -33,8 +32,8 @@ const TextDisplay = ({ label, value }: { label: string; value: string }) => (
   </Flex>
 );
 
-const TaskDetailPage = () => {
-  const [task, setTask] = useState<Task | null>(null);
+const JobDetailPage = () => {
+  const [job, setJob] = useState<Job | null>(null);
   const [steps] = useState<{ title: string; description: string }[]>([
     { title: "Step 1", description: "Waiting to Start" },
     { title: "Step 2", description: "In Progress" },
@@ -45,70 +44,59 @@ const TaskDetailPage = () => {
 
   const params = useParams();
   if (!params.id) {
-    return <div>Task ID is required</div>;
+    return <div>Job ID is required</div>;
   }
 
-  const { data, error, isLoading } = $api.useQuery(
-    "get",
-    "/tasks/{task_id}",
-    { params: { path: { task_id: params.id } } },
-    {
-      refetchOnWindowFocus: true,
-      retry: 3,
-    }
-  );
+  const { data, error, isLoading } = useJob(params.id);
 
   useEffect(() => {
-    if (!isLoading && data && data.data) {
-      setTask(data.data);
-      setCurrentStep(data.data.status > 2 ? 3 : data.data.status + 1);
+    if (!isLoading && data && data) {
+      setJob(data);
+      setCurrentStep(1);
     }
   }, [error, data, isLoading]);
 
   return (
     <>
-      <Layout title="Task Detail">
-        {task && (
+      <Layout title="Job Detail">
+        {job && (
           <Flex w="full" h="full" justify="space-between" mt="10">
             <Flex w="3/4" direction="column">
               <Card.Root mb="6">
                 <Card.Body>
                   <Flex w="full" justify="space-between">
                     <Flex direction="column" gap="2">
-                      <Card.Title>{task.title}</Card.Title>
-                      <Card.Description>
-                        {task.description || "No description provided."}
-                      </Card.Description>
-                      <Tooltip content="Task Status">
+                      <Card.Title>{job.job_name}</Card.Title>
+                      <Tooltip content="Job Status">
                         <Badge
                           w="fit"
                           size="md"
                           variant="outline"
                           colorPalette={
-                            task.status === 0
+                            job.status === "pending"
                               ? "gray"
-                              : task.status === 1
+                              : job.status === "in-progress"
                               ? "blue"
-                              : task.status === 2
+                              : job.status === "completed"
                               ? "green"
-                              : task.status === 3
+                              : job.status === "failed"
                               ? "red"
                               : "gray"
                           }
                         >
-                          {TaskStatus[task.status]}
+                          {job.status}
                         </Badge>
                       </Tooltip>
                     </Flex>
                     <Flex>
-                      {task.status === 0 && (
+                      {job.status === "pending" && (
                         <Button
                           w="fit"
                           variant="outline"
                           colorPalette="blue"
                           onClick={() => setOpenForm(true)}
                         >
-                          Edit Task
+                          Edit Job
                         </Button>
                       )}
                     </Flex>
@@ -119,27 +107,24 @@ const TaskDetailPage = () => {
                 <Card.Root w="1/3">
                   <Card.Body>
                     <Card.Title mb="4">Task Details</Card.Title>
-                    <TextDisplay label="Task ID" value={task.id || "N/A"} />
+                    <TextDisplay label="Task ID" value={job.job_id} />
+                    <TextDisplay label="Recurrence" value={job.frequency} />
                     <TextDisplay
-                      label="Recurrence"
-                      value={TaskRecurrence[task.recurrence] || "N/A"}
+                      label="Next Execution Time"
+                      value={job.execution_time}
                     />
-                    <TextDisplay
-                      label="Scheduled At"
-                      value={convertUnixToDate(task.scheduledTime) || "N/A"}
-                    />
-                    {task.createdAt && (
+                    {/* {job.createdAt && (
                       <TextDisplay
                         label="Created At"
-                        value={convertUnixToDate(task.createdAt) || "N/A"}
+                        value={convertUnixToDate(job.createdAt) || "N/A"}
                       />
                     )}
-                    {task.updatedAt && (
+                    {job.updatedAt && (
                       <TextDisplay
                         label="Updated At"
-                        value={convertUnixToDate(task.updatedAt) || "N/A"}
+                        value={convertUnixToDate(job.updatedAt) || "N/A"}
                       />
-                    )}
+                    )} */}
                   </Card.Body>
                 </Card.Root>
                 <Card.Root w="2/3">
@@ -160,13 +145,13 @@ const TaskDetailPage = () => {
               defaultStep={currentStep}
               variant="subtle"
               colorPalette={
-                task.status === 0
+                job.status === "pending"
                   ? "gray"
-                  : task.status === 1
+                  : job.status === "in-progress"
                   ? "blue"
-                  : task.status === 2
+                  : job.status === "completed"
                   ? "green"
-                  : task.status === 3
+                  : job.status === "failed"
                   ? "red"
                   : "gray"
               }
@@ -201,7 +186,7 @@ const TaskDetailPage = () => {
                 <Dialog.Title>Edit Task</Dialog.Title>
               </Dialog.Header>
               <Dialog.Body>
-                {task && task.id && <TaskForm task_id={task.id} />}
+                {job && job.job_id && <JobForm job_id={job.job_id} />}
               </Dialog.Body>
               <Dialog.Footer />
             </Dialog.Content>
@@ -212,4 +197,4 @@ const TaskDetailPage = () => {
   );
 };
 
-export default TaskDetailPage;
+export default JobDetailPage;

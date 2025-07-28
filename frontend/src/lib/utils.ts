@@ -10,19 +10,19 @@ export const convertUnixToDate = (
 
 export const TABLE_PAGE_SIZE = 10;
 
-export const TaskStatus = {
-  0: "Pending",
-  1: "In Progress",
-  2: "Completed",
-  3: "Failed",
-  4: "Cancelled",
+export const JobStatus = {
+  pending: "Pending",
+  "in-progress": "In Progress",
+  completed: "Completed",
+  failed: "Failed",
+  cancelled: "Cancelled",
 } as const;
 
-export const TaskRecurrence = {
-  0: "Once",
-  1: "Daily",
-  2: "Weekly",
-  3: "Monthly",
+export const JobFrequency = {
+  Once: "one-time",
+  Daily: "daily",
+  Weekly: "weekly",
+  Monthly: "monthly",
 } as const;
 
 export const sleep = (ms: number) => {
@@ -30,3 +30,12 @@ export const sleep = (ms: number) => {
 };
 
 export const queryClient = new QueryClient();
+
+export const getKeyByValue = <T extends Record<string, any>>(
+  object: T,
+  value: T[keyof T]
+): keyof T | undefined => {
+  return (Object.keys(object) as Array<keyof T>).find(
+    (key) => object[key] === value
+  );
+};

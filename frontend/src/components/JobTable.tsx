@@ -1,7 +1,8 @@
 import { Tooltip } from "@/components/ui/tooltip";
-import type { Task } from "@/lib/api/aliases";
-import { $api } from "@/lib/api/client";
-import { convertUnixToDate, TABLE_PAGE_SIZE, TaskStatus } from "@/lib/utils";
+import { useJobs } from "@/lib/api/hooks";
+import type { Job } from "@/lib/types";
+import { JobStatus, TABLE_PAGE_SIZE } from "@/lib/utils";
+import { useAuth0 } from "@auth0/auth0-react";
 import {
   Box,
   ButtonGroup,
@@ -21,17 +22,18 @@ import { FaBan, FaEye, FaX } from "react-icons/fa6";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { NegativeAlertDialog } from "./Alert";
 
-export const TaskTable = () => {
-  const { data, error, isLoading } = $api.useQuery("get", "/tasks", undefined, {
-    refetchOnWindowFocus: true,
-  });
+export const JobTable = () => {
+  const { user } = useAuth0();
+
+  const { data, error, isLoading } = useJobs(user?.sub);
 
   const sortFilters = createListCollection({
     items: [
       { label: "Title", value: "title" },
       { label: "Status", value: "status" },
-      { label: "Created At", value: "createdAt" },
-      { label: "Update At", value: "updatedAt" },
+      // { label: "Execution Time", value: "executionTime" },
+      // { label: "Created At", value: "createdAt" },
+      // { label: "Update At", value: "updatedAt" },
     ],
   });
   const sortDirections = createListCollection({
@@ -43,33 +45,33 @@ export const TaskTable = () => {
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [filteredData, setFilteredData] = useState<Task[] | null>(null);
+  const [filteredData, setFilteredData] = useState<Job[] | null>(null);
   const [page, setPage] = useState(1);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
-  const [taskContext, setTaskContext] = useState<string | undefined>(undefined);
+  const [jobContext, setJobContext] = useState<string | undefined>(undefined);
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
 
   const updateSort = (sortBy: string | null) => {
     if (!filteredData) return;
     if (!sortBy) {
-      setFilteredData(data?.data || null);
+      setFilteredData(data || null);
       return;
     }
     const sortedData = [...filteredData].sort((a, b) => {
       if (sortBy === "title") {
-        return a.title.localeCompare(b.title);
-      } else if (sortBy === "createdAt") {
-        return (
-          new Date(a.createdAt! * 1000).getTime() -
-          new Date(b.createdAt! * 1000).getTime()
-        );
-      } else if (sortBy === "updatedAt") {
-        return (
-          new Date(a.updatedAt! * 1000).getTime() -
-          new Date(b.updatedAt! * 1000).getTime()
-        );
+        return a.job_name.localeCompare(b.job_name);
+        // } else if (sortBy === "executionTime") {
+        //   return (
+        //     new Date(a.execution_time! * 1000).getTime() -
+        //     new Date(b.execution_time! * 1000).getTime()
+        //   );
+        // } else if (sortBy === "updatedAt") {
+        //   return (
+        //     new Date(a.updatedAt! * 1000).getTime() -
+        //     new Date(b.updatedAt! * 1000).getTime()
+        //   );
       } else if (sortBy === "status") {
-        return a.status - b.status;
+        return a.status.localeCompare(b.status);
       }
       return 0;
     });
@@ -86,14 +88,12 @@ export const TaskTable = () => {
 
   const updateStatusFilter = (status: string | null) => {
     if (!status) {
-      setFilteredData(data?.data || null);
+      setFilteredData(data || null);
       setStatusFilter(null);
       return;
     }
 
-    setFilteredData(
-      data?.data?.filter((task) => TaskStatus[task.status] === status) || null
-    );
+    setFilteredData(data?.filter((job) => job.status === status) || null);
     setStatusFilter(status);
     setPage(1);
   };
@@ -106,11 +106,9 @@ export const TaskTable = () => {
   };
 
   useEffect(() => {
-    if (!isLoading && !error && data && data.data) {
-      setFilteredData(data.data);
-      setAvailableStatuses(
-        Array.from(new Set(data.data.map((task) => TaskStatus[task.status])))
-      );
+    if (!isLoading && !error && data) {
+      setFilteredData(data);
+      setAvailableStatuses(Array.from(new Set(data.map((job) => job.status))));
     }
   }, [data, isLoading, error]);
 
@@ -177,7 +175,7 @@ export const TaskTable = () => {
               }}
             >
               <SegmentGroup.Items
-                items={Object.values(TaskStatus).map((status) => ({
+                items={Object.values(JobStatus).map((status) => ({
                   label: status,
                   value: status,
                   disabled: !availableStatuses.includes(status) || isLoading,
@@ -207,11 +205,11 @@ export const TaskTable = () => {
           <Table.Root interactive>
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader>Task ID</Table.ColumnHeader>
-                <Table.ColumnHeader>Title</Table.ColumnHeader>
+                <Table.ColumnHeader>Job ID</Table.ColumnHeader>
+                <Table.ColumnHeader>Name</Table.ColumnHeader>
                 <Table.ColumnHeader>Status</Table.ColumnHeader>
-                <Table.ColumnHeader>Created At</Table.ColumnHeader>
-                <Table.ColumnHeader>Updated At</Table.ColumnHeader>
+                {/* <Table.ColumnHeader>Execution Time</Table.ColumnHeader> */}
+                {/* <Table.ColumnHeader>Updated At</Table.ColumnHeader> */}
                 <Table.ColumnHeader color="gray">Actions</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
@@ -228,37 +226,41 @@ export const TaskTable = () => {
                 </Table.Row>
               ) : !filteredData || filteredData.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6}>No tasks to display</Table.Cell>
+                  <Table.Cell colSpan={6} textAlign="center">
+                    No jobs to display
+                  </Table.Cell>
                 </Table.Row>
               ) : (
-                getPagedData()?.map((task) => (
-                  <Table.Row key={task.id}>
-                    <Table.Cell>{task.id}</Table.Cell>
-                    <Table.Cell>{task.title}</Table.Cell>
-                    <Table.Cell>{TaskStatus[task.status]}</Table.Cell>
-                    <Table.Cell>
-                      {convertUnixToDate(task.createdAt) ?? "N/A"}
-                    </Table.Cell>
-                    <Table.Cell>
+                getPagedData()?.map((job) => (
+                  <Table.Row key={job.job_id}>
+                    <Table.Cell>{job.job_id}</Table.Cell>
+                    <Table.Cell>{job.job_name}</Table.Cell>
+                    <Table.Cell>{job.status}</Table.Cell>
+                    {/* <Table.Cell>
+                      {convertUnixToDate(job.execution_time) ?? "N/A"}
+                    </Table.Cell> */}
+                    {/* <Table.Cell>
                       {convertUnixToDate(task.updatedAt) ?? "N/A"}
-                    </Table.Cell>
+                    </Table.Cell> */}
                     <Table.Cell>
                       <ButtonGroup variant="outline" size="xs">
                         <Link
-                          href={`/tasks/${task.id}`}
+                          href={`/jobs/${job.job_id}`}
                           style={{ textDecoration: "none" }}
                         >
-                          <IconButton aria-label="View Task Details">
+                          <IconButton aria-label="View Job Details">
                             <FaEye />
                           </IconButton>
                         </Link>
-                        {task.status < 2 && (
+                        {!["completed", "failed", "cancelled"].includes(
+                          job.status
+                        ) && (
                           <IconButton
-                            aria-label="Cancel Task"
+                            aria-label="Cancel Job"
                             rotate="90deg"
                             onClick={() => {
                               setOpenCancelDialog(true);
-                              setTaskContext(task.id);
+                              setJobContext(job.job_id);
                             }}
                           >
                             <FaBan />
@@ -313,11 +315,11 @@ export const TaskTable = () => {
       <NegativeAlertDialog
         open={openCancelDialog}
         setOpen={setOpenCancelDialog}
-        buttonLabel="Cancel Task"
-        taskId={taskContext}
-        actionCallback={(taskId?: string) => {
-          // TODO: Implement task cancellation API call
-          console.log("Cancel Task", taskId);
+        buttonLabel="Cancel Job"
+        jobId={jobContext}
+        actionCallback={(jobId?: string) => {
+          // TODO: Implement job cancellation API call
+          console.log("Cancel Job", jobId);
         }}
       />
     </>
