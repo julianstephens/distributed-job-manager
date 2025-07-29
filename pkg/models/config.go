@@ -27,6 +27,12 @@ type RabbitConfig struct {
 	Name     string `env:"RABBIT_QUEUE_NAME"`
 }
 
+type Auth0Config struct {
+	Domain   string `env:"VITE_AUTH0_DOMAIN"`
+	Audience string `env:"VITE_AUTH0_AUDIENCE"`
+	JWKSUrl  string `env:"JWKS_URL"`
+}
+
 type Config struct {
 	Host             string `env:"HOST" envDefault:"0.0.0.0"`
 	Port             string `env:"PORT" envDefault:"8080"`
@@ -42,6 +48,7 @@ type Config struct {
 	SandboxCount     int    `env:"SANDBOX_COUNT"`
 	WorkerID         string `env:"WORKER_ID"`
 	JWKSUrl          string `env:"JWKS_URL"`
+	Auth0            Auth0Config
 	Database         DatabaseConfig
 	JobService       JobServiceConfig
 	Cassandra        CassandraConfig

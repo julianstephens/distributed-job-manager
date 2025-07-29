@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -47,7 +48,7 @@ func (j *JWTManager) Validate(c *gin.Context) (string, error) {
 		return "", ErrInvalidToken
 	}
 
-	k, err := keyfunc.NewDefaultCtx(c.Request.Context(), []string{j.conf.JWKSUrl})
+	k, err := keyfunc.NewDefaultCtx(c.Request.Context(), []string{j.conf.Auth0.JWKSUrl})
 	if err != nil {
 		return "", fmt.Errorf("failed to create a keyfunc from the jwks URL: %v", err)
 	}
@@ -67,8 +68,17 @@ func (j *JWTManager) Validate(c *gin.Context) (string, error) {
 	}
 
 	if claims, ok := parsed.Claims.(jwt.MapClaims); ok {
-		sub, err := claims.GetSubject()
-		return sub, err
+		iss, err := claims.GetIssuer()
+		if err != nil || iss != fmt.Sprintf("https://%s/", j.conf.Auth0.Domain) {
+			return "", errors.New("invalid token issuer")
+		}
+
+		aud, err := claims.GetAudience()
+		if err != nil || !slices.Contains(aud, j.conf.Auth0.Audience) {
+			return "", errors.New("invalid token audience")
+		}
+
+		return claims.GetSubject()
 	} else {
 		return "", errors.New("failed to parse token claims")
 	}
