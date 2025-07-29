@@ -4,12 +4,12 @@ import "time"
 
 type Job struct {
 	JobID         string    `binding:"-" json:"job_id"`
-	UserID        string    `json:"user_id"`
+	UserID        string    `binding:"-" json:"user_id"`
 	JobName       string    `json:"job_name"`
 	Frequency     string    `json:"frequency"`
-	Status        string    `json:"status"`
+	Status        string    `binding:"-" json:"status"`
 	Payload       string    `json:"payload"`
-	RetryCount    int       `json:"retry_count"`
+	RetryCount    int       `binding:"-" json:"retry_count"`
 	MaxRetries    int       `json:"max_retries"`
 	ExecutionTime time.Time `json:"execution_time"`
 }
@@ -22,6 +22,30 @@ func (j *Job) GetJobFrequencyIntervalSeconds() int {
 		return int(time.Hour.Seconds() * 24)
 	}
 	return -1
+}
+
+const (
+	JobStatusPending    = "pending"
+	JobStatusScheduled  = "scheduled"
+	JobStatusInProgress = "in-progress"
+	JobStatusCompleted  = "completed"
+	JobStatusCancelled  = "cancelled"
+	JobStatusFailed     = "failed"
+)
+
+const (
+	JobFrequencyOnce    = "one-time"
+	JobFrequencyDaily   = "daily"
+	JobFrequencyWeekly  = "weekly"
+	JobFrequencyMonthly = "monthly"
+)
+
+type JobUpdateRequest struct {
+	JobName       string    `json:"job_name"`
+	Frequency     string    `json:"frequency"`
+	Payload       string    `json:"payload"`
+	MaxRetries    int       `json:"max_retries"`
+	ExecutionTime time.Time `json:"execution_time"`
 }
 
 type JobSchedule struct {

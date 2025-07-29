@@ -39,16 +39,16 @@ export const $api = axios.create({
   timeout: 1000 * 30,
 });
 
-$api.interceptors.request.use(
-  async (config) => {
-    const token = await getApiKey();
-    if (token) {
-      config.headers.Authorization = token;
-    }
-    return config;
-  },
-  (error) => {
-    console.error("Request error:", error);
-    return Promise.reject(error);
-  }
-);
+// $api.interceptors.request.use(
+//   async (config) => {
+//     const token = await getApiKey();
+//     if (token) {
+//       config.headers.Authorization = token;
+//     }
+//     return config;
+//   },
+//   (error) => {
+//     console.error("Request error:", error);
+//     return Promise.reject(error);
+//   }
+// );

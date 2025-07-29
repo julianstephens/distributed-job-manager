@@ -10,6 +10,7 @@ import {
   CloseButton,
   Dialog,
   Flex,
+  Loader,
   Portal,
   Separator,
   Steps,
@@ -59,7 +60,7 @@ const JobDetailPage = () => {
   return (
     <>
       <Layout title="Job Detail">
-        {job && (
+        {job ? (
           <Flex w="full" h="full" justify="space-between" mt="10">
             <Flex w="3/4" direction="column">
               <Card.Root mb="6">
@@ -168,6 +169,8 @@ const JobDetailPage = () => {
               </Steps.List>
             </Steps.Root>
           </Flex>
+        ) : (
+          <Loader />
         )}
         {error && <div>Error loading task: {error.message}</div>}
       </Layout>

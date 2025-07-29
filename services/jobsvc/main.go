@@ -14,7 +14,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-//	@title			DTS Job Service API
+//	@title			DJM Job API
 //	@version		0.1.0
 //	@description	REST API for managing job submission
 
@@ -41,6 +41,6 @@ func main() {
 		httputil.NewError(c, http.StatusNotFound, fmt.Errorf("resource not found"))
 	})
 
-	logger.Infof("DTS Job Submission SVC starting at %s:%s", conf.Host, conf.Port)
+	logger.Infof("DJM Job SVC starting at %s:%s", conf.Host, conf.Port)
 	logger.Fatalf("%v", r.Run(conf.JobService.Host+":"+conf.JobService.Port))
 }

@@ -1,50 +1,89 @@
 package middleware
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/gin-gonic/gin"
-	internalssm "github.com/julianstephens/distributed-job-manager/pkg/aws/ssm"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
 	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
+	"github.com/julianstephens/distributed-job-manager/pkg/logger"
+	"github.com/julianstephens/distributed-job-manager/pkg/models"
 )
 
-func AuthGuard() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		key := c.Request.Header.Get("X-API-Key")
+var (
+	ErrInvalidToken = errors.New("authorization token is invalid")
+)
 
-		conf := config.GetConfig()
+type JWTManager struct {
+	conf *models.Config
+}
 
-		if key == "" {
-			httputil.NewError(c, http.StatusUnauthorized, errors.New("No API key provided"))
-			c.Abort()
-			return
+func NewJWTManager() *JWTManager {
+	conf := config.GetConfig()
+
+	return &JWTManager{
+		conf: conf,
+	}
+}
+
+func (j *JWTManager) extractToken(c *gin.Context) string {
+	bearerToken := c.Request.Header.Get("Authorization")
+	if len(strings.Split(bearerToken, " ")) == 2 {
+		return strings.Split(bearerToken, " ")[1]
+	}
+
+	return ""
+}
+
+func (j *JWTManager) Validate(c *gin.Context) (string, error) {
+	tokenString := j.extractToken(c)
+	if tokenString == "" {
+		logger.Errorf("received malformated token")
+		return "", ErrInvalidToken
+	}
+
+	k, err := keyfunc.NewDefaultCtx(c.Request.Context(), []string{j.conf.JWKSUrl})
+	if err != nil {
+		return "", fmt.Errorf("failed to create a keyfunc from the jwks URL: %v", err)
+	}
+
+	parsed, err := jwt.Parse(tokenString, k.Keyfunc)
+	if err != nil {
+		switch {
+		case errors.Is(err, jwt.ErrTokenMalformed):
+			return "", ErrInvalidToken
+		case errors.Is(err, jwt.ErrTokenSignatureInvalid):
+			return "", fmt.Errorf("invalid signature")
+		case errors.Is(err, jwt.ErrTokenExpired):
+			return "", fmt.Errorf("token expired")
+		default:
+			return "", fmt.Errorf("failed to parse jwt: %v", err)
 		}
+	}
 
-		ssmClient, err := internalssm.GetSSMClient()
+	if claims, ok := parsed.Claims.(jwt.MapClaims); ok {
+		sub, err := claims.GetSubject()
+		return sub, err
+	} else {
+		return "", errors.New("failed to parse token claims")
+	}
+}
+
+func Guard() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		jM := NewJWTManager()
+		uid, err := jM.Validate(ctx)
 		if err != nil {
-			httputil.NewError(c, http.StatusInternalServerError, errors.New("Unable to check key 1"))
-			c.Abort()
+			httputil.NewError(ctx, http.StatusUnauthorized, err)
+			ctx.Abort()
 			return
 		}
-		paramRes, err := ssmClient.GetParameter(context.Background(), &ssm.GetParameterInput{Name: aws.String(conf.APIKeyParam), WithDecryption: aws.Bool(true)})
-		if err != nil {
-			// httputil.NewError(c, http.StatusInternalServerError, errors.New("Unable to check key 2"))
-			httputil.NewError(c, http.StatusInternalServerError, err)
-			c.Abort()
-			return
-		}
-
-		if key != *paramRes.Parameter.Value {
-			httputil.NewError(c, http.StatusUnauthorized, errors.New("Unauthorized"))
-			c.Abort()
-			return
-		}
-
-		c.Next()
+		ctx.Set("userId", uid)
+		ctx.Next()
 	}
 }

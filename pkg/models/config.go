@@ -30,6 +30,8 @@ type RabbitConfig struct {
 type Config struct {
 	Host             string `env:"HOST" envDefault:"0.0.0.0"`
 	Port             string `env:"PORT" envDefault:"8080"`
+	Auth0Domain      string `env:"VITE_AUTH0_DOMAIN"`
+	Auth0Audience    string `env:"VITE_AUTH0_AUDIENCE"`
 	APIKeyParam      string `env:"API_KEY_PARAM"`
 	BaseEndpoint     string `env:"BASE_ENDPOINT"`
 	JWTSecretKey     string `env:"JWT_SECRET_KEY"`
@@ -39,6 +41,7 @@ type Config struct {
 	TempDir          string `env:"TEMP_DIR"`
 	SandboxCount     int    `env:"SANDBOX_COUNT"`
 	WorkerID         string `env:"WORKER_ID"`
+	JWKSUrl          string `env:"JWKS_URL"`
 	Database         DatabaseConfig
 	JobService       JobServiceConfig
 	Cassandra        CassandraConfig

@@ -19,4 +19,11 @@ export interface Job {
   execution_time: string;
 }
 
-export type JobRequest = Omit<Job, "job_id" | "retry_count" | "status">;
+export type JobRequest = Omit<
+  Job,
+  "job_id" | "user_id" | "retry_count" | "status"
+>;
+
+export type TokenProp = {
+  token: string;
+};

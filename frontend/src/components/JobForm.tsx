@@ -1,10 +1,9 @@
 import { toaster } from "@/components/ui/toaster";
 import "@/date-picker.css";
-import { useJob } from "@/lib/api/hooks";
+import { useAuthToken, useJob } from "@/lib/api/hooks";
 import { createJob } from "@/lib/api/queries";
 import type { Job, JobRequest } from "@/lib/types";
 import { getKeyByValue, JobFrequency, queryClient } from "@/lib/utils";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Button, Field, Flex, Input } from "@chakra-ui/react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
@@ -26,7 +25,7 @@ export const JobForm = ({
   job_id?: string;
   closeForm?: VoidFunction;
 }) => {
-  const { user, logout } = useAuth0();
+  const token = useAuthToken();
   const { data, isLoading, error } = useJob(job_id);
   const [job, setJob] = useState<Job | null>(null);
   const mutation = useMutation({
@@ -48,16 +47,7 @@ export const JobForm = ({
       execution_time: job?.execution_time ?? new Date().toISOString(),
     },
     onSubmit: async ({ value: values }) => {
-      if (!user?.sub) {
-        toaster.error({
-          title: "User not found",
-          description: "No user id found for current user",
-        });
-        logout();
-        return;
-      }
       const req: JobRequest = {
-        user_id: user?.sub,
         job_name: values.job_name,
         frequency: values.frequency,
         payload: "```go\n" + values.payload + "\n```",
@@ -66,7 +56,7 @@ export const JobForm = ({
       };
 
       try {
-        const job = await mutation.mutateAsync(req);
+        const job = await mutation.mutateAsync({ token, req });
         toaster.success({
           title: `Job ${job.job_name} created`,
           description: `Scheduled job ${job.job_name} to run ${getKeyByValue(

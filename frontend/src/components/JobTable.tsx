@@ -24,7 +24,6 @@ import { NegativeAlertDialog } from "./Alert";
 
 export const JobTable = () => {
   const { user } = useAuth0();
-
   const { data, error, isLoading } = useJobs(user?.sub);
 
   const sortFilters = createListCollection({
@@ -60,11 +59,11 @@ export const JobTable = () => {
     const sortedData = [...filteredData].sort((a, b) => {
       if (sortBy === "title") {
         return a.job_name.localeCompare(b.job_name);
-        // } else if (sortBy === "executionTime") {
-        //   return (
-        //     new Date(a.execution_time! * 1000).getTime() -
-        //     new Date(b.execution_time! * 1000).getTime()
-        //   );
+      } else if (sortBy === "executionTime") {
+        return (
+          new Date(a.execution_time).getTime() -
+          new Date(b.execution_time).getTime()
+        );
         // } else if (sortBy === "updatedAt") {
         //   return (
         //     new Date(a.updatedAt! * 1000).getTime() -
@@ -208,7 +207,7 @@ export const JobTable = () => {
                 <Table.ColumnHeader>Job ID</Table.ColumnHeader>
                 <Table.ColumnHeader>Name</Table.ColumnHeader>
                 <Table.ColumnHeader>Status</Table.ColumnHeader>
-                {/* <Table.ColumnHeader>Execution Time</Table.ColumnHeader> */}
+                <Table.ColumnHeader>Execution Time</Table.ColumnHeader>
                 {/* <Table.ColumnHeader>Updated At</Table.ColumnHeader> */}
                 <Table.ColumnHeader color="gray">Actions</Table.ColumnHeader>
               </Table.Row>
@@ -236,6 +235,9 @@ export const JobTable = () => {
                     <Table.Cell>{job.job_id}</Table.Cell>
                     <Table.Cell>{job.job_name}</Table.Cell>
                     <Table.Cell>{job.status}</Table.Cell>
+                    <Table.Cell>
+                      {new Date(job.execution_time).toLocaleString()}
+                    </Table.Cell>
                     {/* <Table.Cell>
                       {convertUnixToDate(job.execution_time) ?? "N/A"}
                     </Table.Cell> */}

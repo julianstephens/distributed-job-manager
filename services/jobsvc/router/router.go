@@ -37,7 +37,7 @@ func Setup(conf *models.Config, db *store.DBSession) *gin.Engine {
 		Config: conf,
 	}
 
-	privateGroup := r.Group(BasePath, middleware.AuthGuard())
+	privateGroup := r.Group(BasePath, middleware.Guard())
 
 	jobGroup := privateGroup.Group("/jobs")
 	{
