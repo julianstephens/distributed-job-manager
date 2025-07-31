@@ -44,6 +44,7 @@ func Setup(conf *models.Config, db *store.DBSession) *gin.Engine {
 		jobGroup.GET("/", api.GetJobs)
 		jobGroup.GET("/:id", api.GetJob)
 		jobGroup.POST("", api.CreateJob)
+		jobGroup.PATCH("/:id", api.UpdateJob)
 		jobGroup.DELETE("/:id", api.DeleteJob)
 	}
 

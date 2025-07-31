@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
 	"github.com/julianstephens/distributed-job-manager/pkg/logger"
 	"github.com/julianstephens/distributed-job-manager/pkg/models"
@@ -24,11 +25,7 @@ import (
 // @Failure 500 {object} httputil.HTTPError
 // @Router /jobs [get]
 func (base *Controller) GetJobs(c *gin.Context) {
-	userId, ok := c.Get("userId")
-	if !ok {
-		httputil.NewError(c, http.StatusUnauthorized, errors.New("no user id"))
-		return
-	}
+	userId := httputil.GetId(c)
 
 	logger.Infof("getting jobs for user %s", userId)
 
@@ -57,11 +54,7 @@ func (base *Controller) GetJob(c *gin.Context) {
 		return
 	}
 
-	userId, ok := c.Get("userId")
-	if !ok {
-		httputil.NewError(c, http.StatusUnauthorized, errors.New("no user id"))
-		return
-	}
+	userId := httputil.GetId(c)
 
 	logger.Infof("getting jobs for user %s", userId)
 
@@ -91,18 +84,14 @@ func (base *Controller) CreateJob(c *gin.Context) {
 		return
 	}
 
-	userId, ok := c.Get("userId")
-	if !ok {
-		httputil.NewError(c, http.StatusUnauthorized, errors.New("no user id"))
-		return
-	}
+	userId := httputil.GetId(c)
 
 	now := time.Now().UTC()
 
 	job.CreatedAt = now
 	job.UpdatedAt = now
 	job.JobID = ulid.Make().String()
-	job.UserID = userId.(string)
+	job.UserID = userId
 	job.RetryCount = 0
 	job.Status = models.JobStatusPending
 
@@ -111,7 +100,6 @@ func (base *Controller) CreateJob(c *gin.Context) {
 		httputil.NewError(c, http.StatusBadRequest, err)
 		return
 	}
-
 	supportedLanguages := utils.GetSupportedLanguages()
 	for _, block := range parser.Result {
 		if supportedLanguages[block.Language] == "" {
@@ -119,7 +107,6 @@ func (base *Controller) CreateJob(c *gin.Context) {
 			return
 		}
 	}
-
 	job.Payload = parser.SanitizedInput
 
 	if err := base.DB.Client.Query(models.Jobs.Insert()).BindStruct(job).ExecRelease(); err != nil {
@@ -147,57 +134,76 @@ func (base *Controller) CreateJob(c *gin.Context) {
 // @Security ApiKey
 // @Success 201 {object} httputil.HTTPResponse[models.Job]
 // @Failure 500 {object} httputil.HTTPError
-// @Router /jobs/:id [put]
-// func (base *Controller) UpdateJob(c *gin.Context) {
-// 	var job models.Job
-// 	var jobUpdate models.JobUpdateRequest
+// @Router /jobs/:id [patch]
+func (base *Controller) UpdateJob(c *gin.Context) {
+	userId := httputil.GetId(c)
 
-// 	if err := c.ShouldBindJSON(&jobUpdate); err != nil {
-// 		httputil.NewError(c, http.StatusBadRequest, err)
-// 		return
-// 	}
+	jobId := c.Param("id")
+	if jobId == "" {
+		httputil.NewError(c, http.StatusBadRequest, errors.New("no job id provided"))
+		return
+	}
 
-// 	stmt, names := qb.Select(models.Jobs.Name()).Where(qb.Eq("job_id"), qb.Eq("user_id")).AllowFiltering().ToCql()
-// 	if err := base.DB.Client.Query(stmt, names).Bind(job.JobID, job.UserID, job.Status).SelectRelease(&job); err != nil {
-// 		httputil.NewError(c, http.StatusBadRequest, err)
-// 		return
-// 	}
+	var jobUpdate models.JobUpdateRequest
+	if err := c.ShouldBindJSON(&jobUpdate); err != nil {
+		httputil.NewError(c, http.StatusBadRequest, err)
+		return
+	}
 
-// 	parser := &utils.Parser{}
-// 	if err := parser.Parse(job.Payload); err != nil {
-// 		httputil.NewError(c, http.StatusBadRequest, err)
-// 		return
-// 	}
+	if jobUpdate.Payload != nil {
+		parser := &utils.Parser{}
+		if err := parser.Parse(*jobUpdate.Payload); err != nil {
+			httputil.NewError(c, http.StatusBadRequest, err)
+			return
+		}
+		supportedLanguages := utils.GetSupportedLanguages()
+		for _, block := range parser.Result {
+			if supportedLanguages[block.Language] == "" {
+				httputil.NewError(c, http.StatusBadRequest, fmt.Errorf("%s is not a supported code language", block.Language))
+				return
+			}
+		}
+		jobUpdate.Payload = &parser.SanitizedInput
+	}
 
-// 	supportedLanguages := utils.GetSupportedLanguages()
-// 	for _, block := range parser.Result {
-// 		if supportedLanguages[block.Language] == "" {
-// 			httputil.NewError(c, http.StatusBadRequest, fmt.Errorf("%s is not a supported code language", block.Language))
-// 			return
-// 		}
-// 	}
+	var job models.Job
+	stmt, names := qb.Select(models.Jobs.Name()).Where(qb.Eq("job_id"), qb.Eq("user_id")).AllowFiltering().ToCql()
+	if err := base.DB.Client.Query(stmt, names).Bind(jobId, userId).Get(&job); err != nil {
+		httputil.NewError(c, http.StatusInternalServerError, fmt.Errorf("unable to get existing job %s", jobId))
+		return
+	}
 
-// 	job.Payload = parser.SanitizedInput
+	err := copier.Copy(&job, &jobUpdate)
+	if err != nil {
+		httputil.NewError(c, http.StatusInternalServerError, errors.New("Something went wrong"))
+		return
+	}
 
-// 	q := base.DB.Client.Query(models.Jobs.Insert()).BindStruct(job)
-// 	if err := q.ExecRelease(); err != nil {
-// 		httputil.NewError(c, http.StatusInternalServerError, err)
-// 		return
-// 	}
+	stmt, names = qb.Delete(models.Jobs.Name()).Where(qb.Eq("job_id"), qb.Eq("user_id")).ToCql()
+	if err := base.DB.Client.Query(stmt, names).Bind(job.JobID, job.UserID).ExecRelease(); err != nil {
+		httputil.NewError(c, http.StatusInternalServerError, errors.New("unable to update job"))
+		return
+	}
 
-// 	jobSchedule := models.JobSchedule{
-// 		JobID:       job.JobID,
-// 		NextRunTime: job.ExecutionTime,
-// 	}
+	if err := base.DB.Client.Query(models.Jobs.Insert()).BindStruct(job).ExecRelease(); err != nil {
+		httputil.NewError(c, http.StatusInternalServerError, errors.New("unable to update job"))
+		return
+	}
 
-// 	q = base.DB.Client.Query(models.JobSchedules.Insert()).BindStruct(jobSchedule)
-// 	if err := q.ExecRelease(); err != nil {
-// 		httputil.NewError(c, http.StatusInternalServerError, err)
-// 		return
-// 	}
+	if jobUpdate.ExecutionTime != nil {
+		jobSchedule := models.JobSchedule{
+			JobID:       job.JobID,
+			NextRunTime: job.ExecutionTime,
+		}
 
-// 	httputil.NewResponse(c, job, httputil.Options{IsCrudHandler: true, HttpMsgMethod: httputil.Post})
-// }
+		if err := base.DB.Client.Query(models.JobSchedules.Update()).BindStruct(jobSchedule).ExecRelease(); err != nil {
+			httputil.NewError(c, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	httputil.NewResponse(c, job, httputil.Options{IsCrudHandler: true, HttpMsgMethod: httputil.Patch})
+}
 
 // DeleteJob godoc
 // @Summary Delete a job
@@ -208,28 +214,24 @@ func (base *Controller) CreateJob(c *gin.Context) {
 // @Failure 500 {object} httputil.HTTPError
 // @Router /jobs/:id [delete]
 func (base *Controller) DeleteJob(c *gin.Context) {
-	jobId, ok := c.Params.Get("id")
-	if !ok {
-		httputil.NewError(c, http.StatusBadRequest, errors.New("no job id provided"))
-		return
-	}
+	userId := httputil.GetId(c)
 
-	userId, ok := c.Get("userId")
-	if !ok {
-		httputil.NewError(c, http.StatusUnauthorized, errors.New("no user id"))
+	jobId := c.Param("id")
+	if jobId == "" {
+		httputil.NewError(c, http.StatusBadRequest, errors.New("no job id provided"))
 		return
 	}
 
 	var job models.Job
 	stmt, names := qb.Select(models.Jobs.Name()).Where(qb.Eq("job_id"), qb.Eq("user_id")).AllowFiltering().ToCql()
 	if err := base.DB.Client.Query(stmt, names).Bind(jobId, userId).Get(&job); err != nil {
-		httputil.NewError(c, http.StatusBadRequest, err)
+		httputil.NewError(c, http.StatusNotFound, fmt.Errorf("job %s not found", jobId))
 		return
 	}
 
 	stmt, names = qb.Delete(models.Jobs.Name()).Where(qb.Eq("user_id"), qb.Eq("job_id")).Where(qb.EqNamed("job_id", jobId)).ToCql()
 	if err := base.DB.Client.Query(stmt, names).Bind(userId, jobId).ExecRelease(); err != nil {
-		httputil.NewError(c, http.StatusInternalServerError, err)
+		httputil.NewError(c, http.StatusInternalServerError, fmt.Errorf("unable to delete job %s", jobId))
 		return
 	}
 

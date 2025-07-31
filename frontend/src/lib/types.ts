@@ -22,10 +22,12 @@ export interface Job {
   updated_at: string;
 }
 
-export type JobRequest = Omit<
+export type JobCreateRequest = Omit<
   Job,
   "job_id" | "user_id" | "retry_count" | "status" | "created_at" | "updated_at"
 >;
+
+export type JobUpdateRequest = Partial<JobCreateRequest>;
 
 export type TokenProp = {
   token: string;

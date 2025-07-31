@@ -1,7 +1,7 @@
 import { toaster } from "@/components/ui/toaster";
 import { useAuthToken, useJob } from "@/lib/api/hooks";
-import { createJob } from "@/lib/api/queries";
-import type { Job, JobRequest } from "@/lib/types";
+import { createJob, updateJob } from "@/lib/api/queries";
+import type { Job, JobCreateRequest, JobUpdateRequest } from "@/lib/types";
 import { getKeyByValue, JobFrequency, queryClient } from "@/lib/utils";
 import { Button, Flex } from "@chakra-ui/react";
 import { useForm } from "@tanstack/react-form";
@@ -47,7 +47,7 @@ export const JobForm = ({
   const token = useAuthToken();
   const { data, isLoading, error } = useJob(job_id);
   const [job, setJob] = useState<Job | null>(null);
-  const mutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: createJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
@@ -56,19 +56,35 @@ export const JobForm = ({
       }
     },
   });
+  const updateMutation = useMutation({
+    mutationFn: updateJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      if (job_id) {
+        queryClient.invalidateQueries({ queryKey: ["jobs", job_id] });
+      }
+    },
+  });
 
-  const createMutate = async (req: JobRequest) => {
+  const createMutate = async (values: Record<string, any>) => {
+    const req: JobCreateRequest = {
+      job_name: values.job_name,
+      job_description: values.job_description,
+      frequency: values.frequency,
+      payload: "```go\n" + values.payload.trimEnd() + "\n```",
+      max_retries: values.max_retries,
+      execution_time: values.execution_time,
+    };
+
     try {
-      const job = await mutation.mutateAsync({ token, req });
+      const job = await createMutation.mutateAsync({ token, req });
       toaster.success({
         title: `Job ${job.job_name} created`,
-        description: `Scheduled job ${job.job_name} to run ${getKeyByValue(
+        description: `${job.job_name} scheduled to run ${getKeyByValue(
           JobFrequency,
           job.frequency as any
         )?.toLowerCase()} starting ${job.execution_time}`,
       });
-      form.reset();
-      if (closeForm) closeForm();
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         toaster.error({
@@ -85,7 +101,62 @@ export const JobForm = ({
     }
   };
 
-  const updateMutate = (jobId: string, req: JobRequest) => {};
+  const updateMutate = async (
+    id: string,
+    values: Record<string, any>,
+    original: Job | null
+  ) => {
+    if (!original) {
+      toaster.error({
+        title: "Unable to update job",
+        description: "Something went wrong.",
+      });
+      return;
+    }
+
+    const req: JobUpdateRequest = {
+      ...(values.job_name != original.job_name && {
+        job_name: values.job_name,
+      }),
+      ...(values.job_description != original.job_description && {
+        job_description: values.job_description,
+      }),
+      ...(values.frequency != original.frequency && {
+        frequency: values.frequency,
+      }),
+      ...(values.max_retries != original.max_retries && {
+        max_retries: values.max_retries,
+      }),
+      ...(values.execution_time != original.execution_time && {
+        execution_time: values.execution_time,
+      }),
+      payload: values.payload,
+    };
+
+    try {
+      const job = await updateMutation.mutateAsync({ token, req, id });
+      toaster.success({
+        title: `Job ${job.job_name} updated`,
+        description: `${job.job_name} scheduled to run ${getKeyByValue(
+          JobFrequency,
+          job.frequency as any
+        )?.toLowerCase()} starting ${job.execution_time}`,
+      });
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toaster.error({
+          title: "Unable to update job",
+          description: error.message,
+        });
+        return;
+      }
+
+      toaster.error({
+        title: "Unable to update job",
+        description: "Something went wrong",
+      });
+    }
+  };
 
   const form = useForm({
     defaultValues: {
@@ -97,20 +168,13 @@ export const JobForm = ({
       execution_time: job?.execution_time ?? new Date().toISOString(),
     },
     onSubmit: async ({ value: values }) => {
-      const req: JobRequest = {
-        job_name: values.job_name,
-        job_description: values.job_description,
-        frequency: values.frequency,
-        payload: "```go\n" + values.payload.trimEnd() + "\n```",
-        max_retries: values.max_retries,
-        execution_time: values.execution_time,
-      };
-
-      if (!job_id) {
-        await createMutate(req);
+      if (job_id) {
+        await updateMutate(job_id, values, job);
       } else {
-        await updateMutate(job_id, req);
+        await createMutate(values);
       }
+      if (closeForm) closeForm();
+      form.reset();
     },
   });
 

@@ -45,11 +45,12 @@ const (
 )
 
 type JobUpdateRequest struct {
-	JobName       string    `json:"job_name"`
-	Frequency     string    `json:"frequency"`
-	Payload       string    `json:"payload"`
-	MaxRetries    int       `json:"max_retries"`
-	ExecutionTime time.Time `json:"execution_time"`
+	JobName        *string    `json:"job_name"`
+	JobDescription *string    `json:"job_description"`
+	Frequency      *string    `json:"frequency"`
+	Payload        *string    `json:"payload"`
+	MaxRetries     *int       `json:"max_retries"`
+	ExecutionTime  *time.Time `json:"execution_time"`
 }
 
 type JobSchedule struct {

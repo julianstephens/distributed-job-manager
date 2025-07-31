@@ -100,7 +100,7 @@ const JobDetailPage = () => {
                   <Card.Body>
                     <Card.Title mb="4">Task Details</Card.Title>
                     <TextDisplay label="Task ID" value={job.job_id} />
-                    <TextDisplay label="Recurrence" value={job.frequency} />
+                    <TextDisplay label="Run Frequency" value={job.frequency} />
                     <TextDisplay
                       label="Next Execution Time"
                       value={displayDate(job.execution_time)}

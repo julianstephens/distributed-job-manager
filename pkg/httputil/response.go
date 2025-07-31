@@ -22,6 +22,7 @@ type HTTPMethod int64
 const (
 	Get HTTPMethod = iota
 	Post
+	Patch
 	Put
 	Delete
 )
@@ -32,6 +33,8 @@ func (s HTTPMethod) String() string {
 		return "get"
 	case Post:
 		return "post"
+	case Patch:
+		return "patch"
 	case Put:
 		return "put"
 	case Delete:

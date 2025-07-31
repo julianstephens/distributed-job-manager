@@ -3,6 +3,7 @@ package httputil
 import (
 	"bufio"
 	"errors"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -64,13 +65,17 @@ func Ensure(path string, isDir bool) error {
 	return nil
 }
 
-// GetId parses the 'id' path param from Gin context
-func GetId(ctx *gin.Context) (string, error) {
-	id := ctx.Param("id")
-	if id == "" {
-		return id, errors.New("no resource id provided")
+// GetId parses the 'userId' path param from Gin context
+func GetId(ctx *gin.Context) (userId string) {
+	val, ok := ctx.Get("userId")
+	if !ok {
+		NewError(ctx, http.StatusUnauthorized, errors.New("no user id"))
+		return
 	}
-	return id, nil
+
+	userId = val.(string)
+
+	return
 }
 
 func ReadFile(filename string) ([]byte, error) {
