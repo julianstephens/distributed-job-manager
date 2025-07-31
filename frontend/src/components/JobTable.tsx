@@ -1,9 +1,15 @@
 import { Tooltip } from "@/components/ui/tooltip";
 import { useJobs } from "@/lib/api/hooks";
 import type { Job } from "@/lib/types";
-import { JobStatus, TABLE_PAGE_SIZE } from "@/lib/utils";
+import {
+  displayDate,
+  getJobStatusColor,
+  JobStatus,
+  TABLE_PAGE_SIZE,
+} from "@/lib/utils";
 import { useAuth0 } from "@auth0/auth0-react";
 import {
+  Badge,
   Box,
   ButtonGroup,
   createListCollection,
@@ -18,9 +24,28 @@ import {
   Table,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { FaBan, FaEye, FaX } from "react-icons/fa6";
+import { FaArrowDown, FaArrowUp, FaBan, FaEye, FaX } from "react-icons/fa6";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { NegativeAlertDialog } from "./Alert";
+
+const ColumnWithSortArrow = ({
+  field,
+  sortKey,
+  sortBy,
+  sortDirection,
+}: {
+  field: string;
+  sortKey: string;
+  sortBy: string;
+  sortDirection: string;
+}) => (
+  <Flex justify="center" align="center" gap="2">
+    {field}
+    <Icon display={sortBy === sortKey ? "inline-block" : "none"}>
+      {sortDirection === "asc" ? <FaArrowUp /> : <FaArrowDown />}
+    </Icon>
+  </Flex>
+);
 
 export const JobTable = () => {
   const { user } = useAuth0();
@@ -28,11 +53,11 @@ export const JobTable = () => {
 
   const sortFilters = createListCollection({
     items: [
-      { label: "Title", value: "title" },
+      { label: "Name", value: "name" },
       { label: "Status", value: "status" },
-      // { label: "Execution Time", value: "executionTime" },
-      // { label: "Created At", value: "createdAt" },
-      // { label: "Update At", value: "updatedAt" },
+      { label: "Execution Time", value: "executionTime" },
+      { label: "Created At", value: "createdAt" },
+      { label: "Last Updated", value: "lastUpdated" },
     ],
   });
   const sortDirections = createListCollection({
@@ -57,20 +82,23 @@ export const JobTable = () => {
       return;
     }
     const sortedData = [...filteredData].sort((a, b) => {
-      if (sortBy === "title") {
-        return a.job_name.localeCompare(b.job_name);
+      if (sortBy === "name") {
+        return a.job_name < b.job_name ? -1 : a.job_name === b.job_name ? 0 : 1;
       } else if (sortBy === "executionTime") {
         return (
           new Date(a.execution_time).getTime() -
           new Date(b.execution_time).getTime()
         );
-        // } else if (sortBy === "updatedAt") {
-        //   return (
-        //     new Date(a.updatedAt! * 1000).getTime() -
-        //     new Date(b.updatedAt! * 1000).getTime()
-        //   );
+      } else if (sortBy === "createdAt") {
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      } else if (sortBy === "lastUpdated") {
+        return (
+          new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+        );
       } else if (sortBy === "status") {
-        return a.status.localeCompare(b.status);
+        return a.status < b.status ? -1 : a.status === b.status ? 0 : 1;
       }
       return 0;
     });
@@ -204,54 +232,99 @@ export const JobTable = () => {
           <Table.Root interactive>
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader>Job ID</Table.ColumnHeader>
-                <Table.ColumnHeader>Name</Table.ColumnHeader>
-                <Table.ColumnHeader>Status</Table.ColumnHeader>
-                <Table.ColumnHeader>Execution Time</Table.ColumnHeader>
-                {/* <Table.ColumnHeader>Updated At</Table.ColumnHeader> */}
+                <Table.ColumnHeader>
+                  <ColumnWithSortArrow
+                    field="Name"
+                    sortKey="name"
+                    sortBy={sortBy as string}
+                    sortDirection={sortDirection as string}
+                  />
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>Description</Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  <ColumnWithSortArrow
+                    field="Status"
+                    sortKey="status"
+                    sortBy={sortBy as string}
+                    sortDirection={sortDirection as string}
+                  />
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  <ColumnWithSortArrow
+                    field="Execution Time"
+                    sortKey="executionTime"
+                    sortBy={sortBy as string}
+                    sortDirection={sortDirection as string}
+                  />
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  <ColumnWithSortArrow
+                    field="Created At"
+                    sortKey="createdAt"
+                    sortBy={sortBy as string}
+                    sortDirection={sortDirection as string}
+                  />
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  <ColumnWithSortArrow
+                    field="Last Updated"
+                    sortKey="lastUpdated"
+                    sortBy={sortBy as string}
+                    sortDirection={sortDirection as string}
+                  />
+                </Table.ColumnHeader>
                 <Table.ColumnHeader color="gray">Actions</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
               {isLoading ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6} textAlign="center">
+                  <Table.Cell colSpan={8} textAlign="center">
                     Loading...
                   </Table.Cell>
                 </Table.Row>
               ) : error ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6}>Error: {error.message}</Table.Cell>
+                  <Table.Cell colSpan={8} textAlign="center">
+                    Error: {error.message}
+                  </Table.Cell>
                 </Table.Row>
               ) : !filteredData || filteredData.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6} textAlign="center">
+                  <Table.Cell colSpan={8} textAlign="center">
                     No jobs to display
                   </Table.Cell>
                 </Table.Row>
               ) : (
                 getPagedData()?.map((job) => (
                   <Table.Row key={job.job_id}>
-                    <Table.Cell>{job.job_id}</Table.Cell>
                     <Table.Cell>{job.job_name}</Table.Cell>
-                    <Table.Cell>{job.status}</Table.Cell>
+                    <Table.Cell>{job.job_description}</Table.Cell>
                     <Table.Cell>
-                      {new Date(job.execution_time).toLocaleString()}
+                      <Badge
+                        padding="2"
+                        colorPalette={getJobStatusColor(job.status as any)}
+                        fontSize="sm"
+                        borderRadius="lg"
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        {job.status}
+                      </Badge>
                     </Table.Cell>
-                    {/* <Table.Cell>
-                      {convertUnixToDate(job.execution_time) ?? "N/A"}
-                    </Table.Cell> */}
-                    {/* <Table.Cell>
-                      {convertUnixToDate(task.updatedAt) ?? "N/A"}
-                    </Table.Cell> */}
+                    <Table.Cell>{displayDate(job.execution_time)}</Table.Cell>
+                    <Table.Cell>{displayDate(job.created_at)}</Table.Cell>
+                    <Table.Cell>{displayDate(job.updated_at)}</Table.Cell>
                     <Table.Cell>
                       <ButtonGroup variant="outline" size="xs">
                         <Link
                           href={`/jobs/${job.job_id}`}
                           style={{ textDecoration: "none" }}
+                          _hover={{ fill: "blue" }}
                         >
                           <IconButton aria-label="View Job Details">
-                            <FaEye />
+                            <FaEye className="icon-hover-purple" />
                           </IconButton>
                         </Link>
                         {!["completed", "failed", "cancelled"].includes(
@@ -265,7 +338,7 @@ export const JobTable = () => {
                               setJobContext(job.job_id);
                             }}
                           >
-                            <FaBan />
+                            <FaBan className="icon-hover-red" />
                           </IconButton>
                         )}
                       </ButtonGroup>

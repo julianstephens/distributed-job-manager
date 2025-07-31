@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
@@ -96,6 +97,10 @@ func (base *Controller) CreateJob(c *gin.Context) {
 		return
 	}
 
+	now := time.Now().UTC()
+
+	job.CreatedAt = now
+	job.UpdatedAt = now
 	job.JobID = ulid.Make().String()
 	job.UserID = userId.(string)
 	job.RetryCount = 0

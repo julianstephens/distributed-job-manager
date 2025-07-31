@@ -22,7 +22,7 @@ const JobDashboardPage = () => {
   return (
     <>
       <Layout
-        title={`Welcome, ${user?.given_name ?? "User"}`}
+        title={`Hello, ${user?.given_name ?? "User"}`}
         actionButton={createButton()}
       >
         <JobTable />

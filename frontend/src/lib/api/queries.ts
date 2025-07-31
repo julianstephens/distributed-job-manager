@@ -1,15 +1,9 @@
 import type { HTTPResponse, Job, JobRequest, TokenProp } from "@/lib/types";
 import { $api } from "./client";
 
-export const getJobs = async ({
-  token,
-  userId,
-}: TokenProp & { userId: string }): Promise<Job[]> => {
+export const getJobs = async ({ token }: TokenProp): Promise<Job[]> => {
   if (!token) throw new Error("auth token missing");
   const res = await $api.get<HTTPResponse<Job[]>>("/jobs", {
-    params: {
-      user_id: userId,
-    },
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data.data;

@@ -12,6 +12,7 @@ export const TABLE_PAGE_SIZE = 10;
 
 export const JobStatus = {
   pending: "Pending",
+  scheduled: "Scheduled",
   "in-progress": "In Progress",
   completed: "Completed",
   failed: "Failed",
@@ -39,3 +40,20 @@ export const getKeyByValue = <T extends Record<string, any>>(
     (key) => object[key] === value
   );
 };
+
+export const getJobStatusColor = (status: keyof typeof JobStatus) => {
+  switch (status) {
+    case "pending":
+      return "gray";
+    case "in-progress":
+      return "blue";
+    case "completed":
+      return "green";
+    case "failed":
+      return "red";
+    default:
+      return "gray";
+  }
+};
+
+export const displayDate = (date: string) => new Date(date).toLocaleString();

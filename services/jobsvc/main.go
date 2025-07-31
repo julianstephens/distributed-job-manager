@@ -38,9 +38,9 @@ func main() {
 	r.GET("/api/v1/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.NoRoute(func(c *gin.Context) {
-		httputil.NewError(c, http.StatusNotFound, fmt.Errorf("resource not found"))
+		httputil.NewError(c, http.StatusNotFound, fmt.Errorf("endpoint not found"))
 	})
 
-	logger.Infof("DJM Job SVC starting at %s:%s", conf.Host, conf.Port)
+	logger.Infof("DJM Job SVC starting at %s:%s", conf.JobService.Host, conf.JobService.Port)
 	logger.Fatalf("%v", r.Run(conf.JobService.Host+":"+conf.JobService.Port))
 }

@@ -13,6 +13,8 @@ Steps:
 
 ## TODO
 
+### backend
+
 - [ ] Update DB table(s) with worker results
 - [ ] Assign worker threads by user id
 - [ ] Create manager service
@@ -20,3 +22,9 @@ Steps:
   - [ ] Add heartbeat monitoring
   - [ ] Add worker cleanup
 - [ ] Create coordinator service
+- [ ] Add job cancellation endpoint
+
+### frontend
+
+- [ ] Add timestamps to tables
+- [ ]

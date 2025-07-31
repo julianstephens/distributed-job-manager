@@ -1,3 +1,18 @@
 .cm-theme {
   width: 100%;
 }
+
+.icon-hover-red:hover {
+  fill: var(--chakra-colors-red-500);
+}
+
+.icon-hover-purple:hover {
+  fill: var(--chakra-colors-purple-solid);
+}
+
+div:has(> input.border-red),
+div:has(> input.border-red):active,
+div:has(> input.border-red):hover,
+div:has(> input.border-red):focus {
+  border-color: var(--chakra-colors-red-400);
+}

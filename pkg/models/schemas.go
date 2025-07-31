@@ -9,18 +9,22 @@ var (
 			"job_id",
 			"user_id",
 			"job_name",
+			"job_description",
+			"job_metadata",
 			"frequency",
 			"status",
 			"payload",
 			"retry_count",
 			"max_retries",
 			"execution_time",
+			"created_at",
+			"updated_at",
 		},
 		PartKey: []string{
-			"job_id",
 			"user_id",
 		},
 		SortKey: []string{
+			"job_id",
 			"status",
 		},
 	})
@@ -49,6 +53,7 @@ var (
 			"start_time",
 			"end_time",
 			"status",
+			"output",
 			"error_message",
 		},
 		PartKey: []string{
@@ -57,21 +62,6 @@ var (
 		SortKey: []string{
 			"worker_id",
 			"status",
-		},
-	})
-
-	Users = table.New(table.Metadata{
-		Name: "users",
-		Columns: []string{
-			"id",
-			"username",
-			"password",
-		},
-		PartKey: []string{
-			"id",
-		},
-		SortKey: []string{
-			"username",
 		},
 	})
 )

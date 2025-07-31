@@ -1,22 +1,41 @@
 import { toaster } from "@/components/ui/toaster";
-import "@/date-picker.css";
 import { useAuthToken, useJob } from "@/lib/api/hooks";
 import { createJob } from "@/lib/api/queries";
 import type { Job, JobRequest } from "@/lib/types";
 import { getKeyByValue, JobFrequency, queryClient } from "@/lib/utils";
-import { Button, Field, Flex, Input } from "@chakra-ui/react";
+import { Button, Flex } from "@chakra-ui/react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { tokyoNight } from "@uiw/codemirror-theme-tokyo-night";
+import axios from "axios";
 import { useEffect, useState } from "react";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {
   CodeEditorFormField,
+  DatePickerFormField,
   InputFormField,
   NumberInputFormField,
   SelectFormField,
+  TextAreaFormField,
 } from "./form";
+
+const cleanHtml = (unsanitized?: string) => {
+  if (!unsanitized) return unsanitized;
+  const div = document.createElement("div");
+  div.innerHTML = unsanitized;
+  return div.innerText;
+};
+
+const isValidDate = (value: string) => {
+  const now = new Date();
+  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+  const date = new Date(value);
+
+  if (date.getTime() < fiveMinutesFromNow.getTime()) {
+    return false;
+  }
+  return true;
+};
 
 export const JobForm = ({
   job_id,
@@ -38,36 +57,59 @@ export const JobForm = ({
     },
   });
 
+  const createMutate = async (req: JobRequest) => {
+    try {
+      const job = await mutation.mutateAsync({ token, req });
+      toaster.success({
+        title: `Job ${job.job_name} created`,
+        description: `Scheduled job ${job.job_name} to run ${getKeyByValue(
+          JobFrequency,
+          job.frequency as any
+        )?.toLowerCase()} starting ${job.execution_time}`,
+      });
+      form.reset();
+      if (closeForm) closeForm();
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toaster.error({
+          title: "Unable to create job",
+          description: error.message,
+        });
+        return;
+      }
+
+      toaster.error({
+        title: "Unable to create job",
+        description: "Something went wrong",
+      });
+    }
+  };
+
+  const updateMutate = (jobId: string, req: JobRequest) => {};
+
   const form = useForm({
     defaultValues: {
       job_name: job?.job_name ?? "",
+      job_description: job?.job_description ?? "",
       frequency: job?.frequency ?? JobFrequency.Once,
-      payload: job?.payload ?? "\n".repeat(7),
+      payload: cleanHtml(job?.payload) ?? "\n".repeat(7),
       max_retries: job?.max_retries ?? 3,
       execution_time: job?.execution_time ?? new Date().toISOString(),
     },
     onSubmit: async ({ value: values }) => {
       const req: JobRequest = {
         job_name: values.job_name,
+        job_description: values.job_description,
         frequency: values.frequency,
-        payload: "```go\n" + values.payload + "\n```",
+        payload: "```go\n" + values.payload.trimEnd() + "\n```",
         max_retries: values.max_retries,
         execution_time: values.execution_time,
       };
 
-      try {
-        const job = await mutation.mutateAsync({ token, req });
-        toaster.success({
-          title: `Job ${job.job_name} created`,
-          description: `Scheduled job ${job.job_name} to run ${getKeyByValue(
-            JobFrequency,
-            job.frequency as any
-          )?.toLowerCase()} starting ${job.execution_time}`,
-        });
-        form.reset();
-        if (closeForm) closeForm();
-      } catch (error) {
-        toaster.error({ title: "Unable to create job", description: error });
+      if (!job_id) {
+        await createMutate(req);
+      } else {
+        await updateMutate(job_id, req);
       }
     },
   });
@@ -77,8 +119,9 @@ export const JobForm = ({
       setJob(data);
       form.reset({
         job_name: data.job_name,
+        job_description: data.job_description,
         frequency: data.frequency,
-        payload: data.payload,
+        payload: cleanHtml(data.payload) ?? "\n".repeat(7),
         max_retries: data.max_retries,
         execution_time: data.execution_time,
       });
@@ -91,17 +134,35 @@ export const JobForm = ({
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          form.handleSubmit();
+          void form.handleSubmit();
         }}
       >
         <Flex direction="column" gap="3">
           <form.Field
             name="job_name"
+            validators={{
+              onChange: ({ value }) =>
+                !value || value.length < 3
+                  ? "Jobs must have a name at least 3 characters long"
+                  : undefined,
+            }}
             children={(field) => (
               <InputFormField
                 name="name"
                 placeholder={job?.job_name}
                 onChange={field.handleChange}
+                error={field.state.meta.errors.join(",")}
+              />
+            )}
+          />
+          <form.Field
+            name="job_description"
+            children={(field) => (
+              <TextAreaFormField
+                name="description"
+                placeholder={job?.job_description}
+                onChange={field.handleChange}
+                error={field.state.meta.errors.join(",")}
               />
             )}
           />
@@ -111,6 +172,10 @@ export const JobForm = ({
               <SelectFormField
                 name={field.name}
                 placeholder="Select frequency"
+                defaultValue={
+                  form.getFieldValue(field.name) as string | undefined
+                }
+                error={field.state.meta.errors.join(",")}
                 items={Object.entries(JobFrequency).map(([label, value]) => ({
                   value,
                   label,
@@ -126,54 +191,68 @@ export const JobForm = ({
                 name={field.name.split("_").join(" ")}
                 defaultValue={`${job?.max_retries ?? 3}`}
                 onChange={field.handleChange}
+                error={field.state.meta.errors.join(",")}
               />
             )}
           />
           <form.Field
             name="execution_time"
+            validators={{
+              onBlur: ({ value }) => {
+                if (!value) return "Execution datetime must be set";
+                if (!isValidDate(value))
+                  return "Execution datetime must be at least 5 minutes in the future";
+                return undefined;
+              },
+            }}
             children={(field) => (
-              <Field.Root>
-                <Field.Label textTransform="capitalize">
-                  {field.name.split("_").join(" ")}
-                </Field.Label>
-                <DatePicker
-                  selected={
-                    form.getFieldValue(field.name)
-                      ? //@ts-ignore TS2769
-                        new Date(form.getFieldValue(field.name))
-                      : new Date()
-                  }
-                  onChange={(date) =>
-                    form.setFieldValue(
-                      "execution_time",
-                      date ? date.toISOString() : ""
-                    )
-                  }
-                  showTimeSelect
-                  timeFormat="HH:mm"
-                  timeIntervals={15}
-                  dateFormat="MMMM d, yyyy h:mm aa"
-                  placeholderText={
-                    job?.execution_time
-                      ? job.execution_time
-                      : "Select execution time"
-                  }
-                  customInput={<Input w="full" border="none" />}
-                />
-              </Field.Root>
+              <DatePickerFormField
+                name={field.name.split("_").join(" ")}
+                selected={
+                  form.getFieldValue(field.name)
+                    ? //@ts-ignore TS2769
+                      new Date(form.getFieldValue(field.name))
+                    : new Date()
+                }
+                onBlur={field.handleBlur}
+                onChange={(date) =>
+                  form.setFieldValue(
+                    "execution_time",
+                    date ? date.toISOString() : ""
+                  )
+                }
+                placeholder={
+                  job?.execution_time
+                    ? job.execution_time
+                    : "Select execution time"
+                }
+                error={field.state.meta.errors.join(",")}
+              />
             )}
           />
           <form.Field
             name="payload"
+            validators={{
+              onChange: ({ value }) => {
+                if (!value || !value.replaceAll("\n", "").replaceAll(" ", ""))
+                  return "Jobs must include a payload";
+                return undefined;
+              },
+            }}
             children={(field) => (
               <CodeEditorFormField
                 name={field.name}
+                error={
+                  field.state.meta.errors.length > 0
+                    ? field.state.meta.errors[0]
+                    : ""
+                }
                 onChange={field.handleChange}
                 height="200px"
                 width="100%"
                 editable={true}
                 theme={tokyoNight}
-                placeholder={form.getFieldValue(field.name) as string}
+                value={form.getFieldValue(field.name) as string}
                 indentWithTab={true}
                 basicSetup={{
                   lineNumbers: true,
@@ -188,7 +267,11 @@ export const JobForm = ({
         </Flex>
         <Flex w="full" justify="flex-end" mt="6">
           <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
+            selector={(state) => [
+              state.canSubmit,
+              state.isSubmitting,
+              state.isValid,
+            ]}
             children={([canSubmit, isSubmitting]) => (
               <Button
                 ml="auto"

@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useJob } from "@/lib/api/hooks";
 import type { Job } from "@/lib/types";
+import { displayDate, getJobStatusColor } from "@/lib/utils";
 import {
   Badge,
   Button,
@@ -73,17 +74,7 @@ const JobDetailPage = () => {
                           w="fit"
                           size="md"
                           variant="outline"
-                          colorPalette={
-                            job.status === "pending"
-                              ? "gray"
-                              : job.status === "in-progress"
-                              ? "blue"
-                              : job.status === "completed"
-                              ? "green"
-                              : job.status === "failed"
-                              ? "red"
-                              : "gray"
-                          }
+                          colorPalette={getJobStatusColor(job.status as any)}
                         >
                           {job.status}
                         </Badge>
@@ -105,30 +96,26 @@ const JobDetailPage = () => {
                 </Card.Body>
               </Card.Root>
               <Flex w="full" gap="2">
-                <Card.Root w="1/3">
+                <Card.Root w="1/2">
                   <Card.Body>
                     <Card.Title mb="4">Task Details</Card.Title>
                     <TextDisplay label="Task ID" value={job.job_id} />
                     <TextDisplay label="Recurrence" value={job.frequency} />
                     <TextDisplay
                       label="Next Execution Time"
-                      value={job.execution_time}
+                      value={displayDate(job.execution_time)}
                     />
-                    {/* {job.createdAt && (
-                      <TextDisplay
-                        label="Created At"
-                        value={convertUnixToDate(job.createdAt) || "N/A"}
-                      />
-                    )}
-                    {job.updatedAt && (
-                      <TextDisplay
-                        label="Updated At"
-                        value={convertUnixToDate(job.updatedAt) || "N/A"}
-                      />
-                    )} */}
+                    <TextDisplay
+                      label="Created At"
+                      value={displayDate(job.created_at)}
+                    />
+                    <TextDisplay
+                      label="Last Updated"
+                      value={displayDate(job.updated_at)}
+                    />
                   </Card.Body>
                 </Card.Root>
-                <Card.Root w="2/3">
+                <Card.Root w="1/2">
                   <Card.Body>
                     <Card.Title mb="4">Run History</Card.Title>
                     <Text mx="auto" my="auto">
@@ -145,17 +132,7 @@ const JobDetailPage = () => {
               count={steps.length}
               defaultStep={currentStep}
               variant="subtle"
-              colorPalette={
-                job.status === "pending"
-                  ? "gray"
-                  : job.status === "in-progress"
-                  ? "blue"
-                  : job.status === "completed"
-                  ? "green"
-                  : job.status === "failed"
-                  ? "red"
-                  : "gray"
-              }
+              colorPalette={getJobStatusColor(job.status as any)}
               w="1/4"
             >
               <Steps.List>

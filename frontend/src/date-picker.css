@@ -52,13 +52,13 @@
 
 .react-datepicker__input-container {
   font-size: 1rem;
-  padding-left: 1rem;
   padding-right: 1rem;
   height: 2.5rem;
   border-radius: 0.25rem;
   border: 1px solid;
   border-color: var(--chakra-colors-gray-800);
 }
+
 .react-datapicker__input-text {
   background-color: transparent;
 }
