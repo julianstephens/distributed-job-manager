@@ -22,7 +22,7 @@ type CassandraConfig struct {
 type RabbitConfig struct {
 	Host     string `env:"RABBIT_HOST"`
 	Port     string `env:"RABBIT_PORT"`
-	Username string `env:"DB_USERNAME"`
+	Username string `env:"RABBIT_USERNAME"`
 	Password string `env:"RABBIT_PASSWORD"`
 	Name     string `env:"RABBIT_QUEUE_NAME"`
 }

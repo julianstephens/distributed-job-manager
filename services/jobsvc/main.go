@@ -6,8 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
+	"github.com/julianstephens/distributed-job-manager/pkg/graylogger"
 	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
 	"github.com/julianstephens/distributed-job-manager/pkg/logger"
+	"github.com/julianstephens/distributed-job-manager/pkg/queue"
 	"github.com/julianstephens/distributed-job-manager/pkg/store"
 	"github.com/julianstephens/distributed-job-manager/services/jobsvc/router"
 	swaggerFiles "github.com/swaggo/files"
@@ -34,7 +36,13 @@ func main() {
 		return
 	}
 
-	r := router.Setup(conf, db)
+	log, err := graylogger.NewLogger("jobsvc")
+	if err != nil {
+		panic(err)
+	}
+	defer queue.CloseConnection(log.LogConn, log.LogCh)
+
+	r := router.Setup(conf, db, log)
 	r.GET("/api/v1/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.NoRoute(func(c *gin.Context) {

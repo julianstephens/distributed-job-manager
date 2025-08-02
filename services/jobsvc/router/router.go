@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/julianstephens/distributed-job-manager/pkg/controller"
+	"github.com/julianstephens/distributed-job-manager/pkg/graylogger"
 	"github.com/julianstephens/distributed-job-manager/pkg/middleware"
 	"github.com/julianstephens/distributed-job-manager/pkg/models"
 	"github.com/julianstephens/distributed-job-manager/pkg/store"
@@ -15,7 +16,7 @@ import (
 
 const BasePath = "/api/v1"
 
-func Setup(conf *models.Config, db *store.DBSession) *gin.Engine {
+func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger) *gin.Engine {
 	r := gin.New()
 
 	r.Use(gin.Logger())

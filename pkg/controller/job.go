@@ -27,7 +27,7 @@ import (
 func (base *Controller) GetJobs(c *gin.Context) {
 	userId := httputil.GetId(c)
 
-	logger.Infof("getting jobs for user %s", userId)
+	base.Logger.Info(fmt.Sprintf("getting jobs for user %s", userId), nil)
 
 	var jobs []models.Job
 	stmt, names := qb.Select(models.Jobs.Name()).Where(qb.Eq("user_id")).AllowFiltering().ToCql()

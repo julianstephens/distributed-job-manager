@@ -32,7 +32,7 @@ func CloseConnection(conn *amqp091.Connection, ch *amqp091.Channel) {
 }
 
 func setup(conf *models.Config) error {
-	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", conf.Rabbit.Username, conf.Rabbit.Password, conf.Rabbit.Host, conf.Rabbit.Port))
+	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/graylog", "grayloguser", "0v3rth3r3", conf.Rabbit.Host, conf.Rabbit.Port))
 	if err != nil {
 		logger.Fatalf("unable to get rabbitmq connection: %v", err)
 		return err
