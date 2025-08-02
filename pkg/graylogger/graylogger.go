@@ -50,12 +50,17 @@ type Log struct {
 
 type LogOptions struct {
 	err            *error
-	additionalData *map[string]interface{}
+	additionalData *map[string]any
 }
 
 func NewLogger(originator string) (*GrayLogger, error) {
 	conf := config.GetConfig()
-	conn, ch, err := queue.GetConnection(conf)
+	conn, err := queue.GetConnection(conf.Rabbit.LoggingUsername, conf.Rabbit.LoggingPassword, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	ch, err := conn.Channel()
 	if err != nil {
 		return nil, err
 	}

@@ -19,13 +19,13 @@ import (
 //	@title			DJM Job API
 //	@version		0.1.0
 //	@description	REST API for managing job submission
-
+//
 // @host		localhost:8080
 // @BasePath	/api/v1
 // @schemes http
 // @securityDefinitions.apikey ApiKey
 // @in header
-// @name X-API-KEY
+// @name Authorization
 // @description User-specific API key
 func main() {
 	conf := config.GetConfig()
@@ -40,7 +40,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer queue.CloseConnection(log.LogConn, log.LogCh)
+	defer queue.CloseConnection(conf.Rabbit.LoggingUsername)
+	defer log.LogCh.Close()
 
 	r := router.Setup(conf, db, log)
 	r.GET("/api/v1/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

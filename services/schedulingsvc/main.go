@@ -13,14 +13,16 @@ import (
 )
 
 func main() {
+	conf := config.GetConfig()
+
 	log, err := graylogger.NewLogger("schedsvc")
 	if err != nil {
 		logger.Fatalf("unable to init logger: %v", err)
 		return
 	}
-	defer queue.CloseConnection(log.LogConn, log.LogCh)
+	defer queue.CloseConnection(conf.Rabbit.LoggingUsername)
+	defer log.LogCh.Close()
 
-	conf := config.GetConfig()
 	db, err := store.GetDB(conf.Cassandra.Keyspace)
 	if err != nil {
 		log.Error("unable to get db connection", &err)

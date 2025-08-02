@@ -25,11 +25,13 @@ type CassandraConfig struct {
 }
 
 type RabbitConfig struct {
-	Host     string `env:"RABBIT_HOST"`
-	Port     string `env:"RABBIT_PORT"`
-	Username string `env:"RABBIT_USERNAME"`
-	Password string `env:"RABBIT_PASSWORD"`
-	Name     string `env:"RABBIT_QUEUE_NAME"`
+	Host            string `env:"RABBIT_HOST"`
+	Port            string `env:"RABBIT_PORT"`
+	Username        string `env:"RABBIT_USERNAME"`
+	Password        string `env:"RABBIT_PASSWORD"`
+	LoggingUsername string `env:"RABBIT_LOGGING_USERNAME"`
+	LoggingPassword string `env:"RABBIT_LOGGING_PASSWORD"`
+	Name            string `env:"RABBIT_QUEUE_NAME"`
 }
 
 type Auth0Config struct {

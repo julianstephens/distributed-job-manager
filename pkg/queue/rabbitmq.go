@@ -11,40 +11,53 @@ import (
 
 var (
 	RabbitConn *amqp091.Connection
-	RabbitCh   *amqp091.Channel
-	once       sync.Once
+	cache      = make(map[string]*amqp091.Connection)
+	cacheMutex sync.RWMutex
 )
 
-func GetConnection(conf *models.Config) (*amqp091.Connection, *amqp091.Channel, error) {
-	var err error
-	once.Do(func() {
-		err = setup(conf)
-	})
-	if err != nil {
-		return nil, nil, err
+func GetConnection(username string, password string, conf *models.Config) (*amqp091.Connection, error) {
+	cacheMutex.RLock()
+	if val, ok := cache[username]; ok {
+		cacheMutex.RUnlock()
+		return val, nil
 	}
-	return RabbitConn, RabbitCh, nil
+	cacheMutex.RUnlock()
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	if val, ok := cache[username]; ok {
+		return val, nil
+	}
+
+	conn, err := setup(username, password, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	cache[username] = conn
+	return conn, err
 }
 
-func CloseConnection(conn *amqp091.Connection, ch *amqp091.Channel) {
-	defer conn.Close()
-	defer ch.Close()
+func CloseConnection(username string) {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+	if conn, ok := cache[username]; ok {
+		if err := conn.Close(); err != nil {
+			logger.Errorf("error closing connection for %s: %v", username, err)
+		}
+		delete(cache, username)
+		logger.Infof("closed connection for %s", username)
+	} else {
+		logger.Warnf("no connection found for %s to close", username)
+	}
 }
 
-func setup(conf *models.Config) error {
-	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/graylog", "grayloguser", "0v3rth3r3", conf.Rabbit.Host, conf.Rabbit.Port))
+func setup(username string, password string, conf *models.Config) (*amqp091.Connection, error) {
+	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/graylog", username, password, conf.Rabbit.Host, conf.Rabbit.Port))
 	if err != nil {
 		logger.Fatalf("unable to get rabbitmq connection: %v", err)
-		return err
+		return nil, err
 	}
 
-	ch, err := conn.Channel()
-	if err != nil {
-		logger.Fatalf("unable to get queue channel: %v", err)
-		return err
-	}
-
-	RabbitConn = conn
-	RabbitCh = ch
-	return nil
+	return conn, nil
 }
