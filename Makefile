@@ -13,3 +13,6 @@ migrate-up: ## Apply all migrations
 
 migrate-down: ## Rollback all migrations
 	@migrate -path cassandra-migrations/ -database $$CASS_URL -verbose down
+
+restart-svcs: ## Restart all services
+	@docker compose up -d jobsvc worker schedulingsvc

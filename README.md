@@ -26,5 +26,4 @@ Steps:
 
 ### frontend
 
-- [ ] Add timestamps to tables
-- [ ]
+- [x] Add timestamps to tables
