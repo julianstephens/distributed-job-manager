@@ -2,32 +2,31 @@ package main
 
 import (
 	"encoding/json"
-	"time"
 
-	"github.com/google/uuid"
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
 	"github.com/julianstephens/distributed-job-manager/pkg/logger"
 	"github.com/julianstephens/distributed-job-manager/pkg/models"
 	"github.com/julianstephens/distributed-job-manager/pkg/queue"
-	"github.com/julianstephens/distributed-job-manager/pkg/store"
 	"github.com/julianstephens/distributed-job-manager/services/workersvc/worker"
 	"github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
 	conf := config.GetConfig()
-	db, err := store.GetDB(conf.Cassandra.Keyspace)
-	if err != nil {
-		logger.Fatalf("unable to get db connection: %v", err)
-		return
-	}
-	conn, ch, err := queue.GetConnection(conf)
-	defer queue.CloseConnection(conn, ch)
 
+	conn, err := queue.GetConnection(conf.Rabbit.Username, conf.Rabbit.Password, conf)
 	if err != nil {
 		logger.Fatalf("unable to get queue connection: %v", err)
 		return
 	}
+	defer queue.CloseConnection(conf.Rabbit.Username)
+
+	ch, err := conn.Channel()
+	if err != nil {
+		logger.Fatalf("unable to get queue channel: %v", err)
+		return
+	}
+	defer ch.Close()
 
 	msgs, err := ch.Consume(
 		conf.Rabbit.Name,
@@ -48,26 +47,28 @@ func main() {
 	logger.Infof("initialized sandbox pool. %d sandboxes available", pool.AvailableCount())
 
 	runner := worker.NewRunner()
+	reporter := worker.NewReporter()
 
-	var forever chan struct{}
-	go processJobs(conf, db, runner, pool, msgs)
-	<-forever
+	go processJobs(runner, pool, reporter, msgs)
+	select {}
 }
 
-func processJobs(config *models.Config, db *store.DBSession, runner *worker.Runner, pool *worker.SandboxPool, msgs <-chan amqp091.Delivery) {
+func processJobs(runner *worker.Runner, pool *worker.SandboxPool, reporter *worker.Reporter, msgs <-chan amqp091.Delivery) {
 	var job models.Job
 	for d := range msgs {
 		if err := json.Unmarshal(d.Body, &job); err != nil {
 			panic(err)
 		}
 
-		err := createJobExecutionEntry(job, config, db)
+		logger.Infof("got job %s. starting processing...", job.JobID)
+
+		jobExec, err := reporter.RegisterExecution(job.JobID)
 		if err != nil {
 			panic(err)
 		}
 
 		logger.Infof("%d sandboxes available", pool.AvailableCount())
-		req, err := runner.NewRequest(job)
+		req, err := runner.NewRequest(job, jobExec.ExecutionID)
 		if err != nil {
 			panic(err)
 		}
@@ -80,27 +81,12 @@ func processJobs(config *models.Config, db *store.DBSession, runner *worker.Runn
 
 		req.BoxID = box.ID
 
-		// runner.RunCode(*req)
-		time.Sleep(time.Second * 10)
+		if err := runner.RunCode(*req, reporter); err != nil {
+			panic(err)
+		}
 
 		pool.Release(job.UserID)
 		logger.Infof("user %s released sandbox %d", job.UserID, box.ID)
 		logger.Infof("%d sandboxes available", pool.AvailableCount())
 	}
-}
-
-func createJobExecutionEntry(job models.Job, config *models.Config, db *store.DBSession) error {
-	jobExecution := models.JobExecution{
-		ExecutionID: uuid.NewString(),
-		WorkerID:    config.WorkerID,
-		JobID:       job.JobID,
-		Status:      "running",
-	}
-
-	q := db.Client.Query(models.JobExecutions.Insert()).BindStruct(jobExecution)
-	if err := q.ExecRelease(); err != nil {
-		return err
-	}
-
-	return nil
 }

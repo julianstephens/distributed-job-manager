@@ -13,6 +13,7 @@ import (
 	"time"
 
 	htmlparse "golang.org/x/net/html"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
 	"github.com/julianstephens/distributed-job-manager/pkg/logger"
@@ -21,11 +22,18 @@ import (
 )
 
 type RunnerRequest struct {
-	config   *models.Config
-	JobID    string
-	WorkerID string
-	BoxID    int
-	Blocks   []utils.CodeBlock
+	config      *models.Config
+	JobID       string
+	ExecutionID string
+	WorkerID    string
+	BoxID       int
+	Blocks      []utils.CodeBlock
+}
+
+type RunnerResponse struct {
+	EndTime time.Time
+	Error   *string
+	Output  *string
 }
 
 type Runner struct {
@@ -41,7 +49,7 @@ func NewRunner() *Runner {
 	}
 }
 
-func (r *Runner) NewRequest(job models.Job) (*RunnerRequest, error) {
+func (r *Runner) NewRequest(job models.Job, executionID string) (*RunnerRequest, error) {
 	doc, err := htmlparse.Parse(strings.NewReader(job.Payload))
 	if err != nil {
 		return nil, err
@@ -51,16 +59,19 @@ func (r *Runner) NewRequest(job models.Job) (*RunnerRequest, error) {
 	r.parser.ExtractCodeBlocks(doc, &d)
 
 	return &RunnerRequest{
-		config:   r.config,
-		JobID:    job.JobID,
-		WorkerID: r.config.WorkerID,
-		Blocks:   d.CodeBlocks,
+		config:      r.config,
+		ExecutionID: executionID,
+		JobID:       job.JobID,
+		WorkerID:    r.config.WorkerID,
+		Blocks:      d.CodeBlocks,
 	}, nil
 }
 
-func (r *Runner) RunCode(in RunnerRequest) error {
+func (r *Runner) RunCode(in RunnerRequest, reporter *Reporter) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
+
+	g, ctx := errgroup.WithContext(context.Background())
 
 	for i, block := range in.Blocks {
 		name, err := WriteToTempFile([]byte(block.Content), block.Language, *r.config)
@@ -69,16 +80,23 @@ func (r *Runner) RunCode(in RunnerRequest) error {
 		}
 		defer os.Remove(name)
 
-		err = runBlock(ctx, r.config.TempDir, name, i, len(in.Blocks))
-		if err != nil {
+		if _, err = reporter.StartExecution(in.ExecutionID); err != nil {
 			return err
 		}
+
+		g.Go(func() error {
+			return runBlock(ctx, r.config.TempDir, name, i, len(in.Blocks), in.ExecutionID, reporter)
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func runBlock(ctx context.Context, tempDir string, fileName string, blockNo int, totalBlocks int) error {
+func runBlock(ctx context.Context, tempDir string, fileName string, blockNo int, totalBlocks int, executionID string, reporter *Reporter) error {
 	cmd := exec.CommandContext(ctx,
 		"isolate",
 		"--fsize=5120",
@@ -97,6 +115,8 @@ func runBlock(ctx context.Context, tempDir string, fileName string, blockNo int,
 		fileName,
 	)
 
+	logger.Infof(cmd.String())
+
 	cmd.WaitDelay = time.Second * 60
 
 	var stderr bytes.Buffer
@@ -104,40 +124,50 @@ func runBlock(ctx context.Context, tempDir string, fileName string, blockNo int,
 
 	stdoutpipe, err := cmd.StdoutPipe()
 	if err != nil {
-		logger.Errorf("block %d of %d errored", blockNo, totalBlocks)
+		logger.Errorf("block %d of %d errored", blockNo+1, totalBlocks)
 		return err
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		logger.Errorf("block %d of %d errored", blockNo, totalBlocks)
+		logger.Errorf("block %d of %d errored", blockNo+1, totalBlocks)
 		return err
+	}
+
+	res := RunnerResponse{
+		EndTime: time.Now().UTC(),
 	}
 
 	scanner := bufio.NewScanner(stdoutpipe)
 	for scanner.Scan() {
 		// TODO: run response
-		// m := scanner.Text()
-		logger.Infof("block %d of %d finished", blockNo, totalBlocks)
+		m := scanner.Text()
+		formatted := *res.Output + "\n" + m
+		res.Output = &formatted
+		logger.Infof(*res.Output)
+		logger.Infof("block %d of %d finished", blockNo+1, totalBlocks)
+		return nil
 	}
 
 	err = cmd.Wait()
 	if err != nil {
 		if strings.Contains(stderr.String(), "box is currently in use by another process") {
-			logger.Errorf("block %d of %d errored", blockNo, totalBlocks)
+			logger.Errorf("block %d of %d errored", blockNo+1, totalBlocks)
 			return ErrSandboxBusy
 		}
 
 		if strings.Contains(err.Error(), "exit status 2") {
-			logger.Errorf("block %d of %d errored", blockNo, totalBlocks)
-			return fmt.Errorf("isolate error: %v", err.Error())
+			logger.Errorf("block %d of %d errored", blockNo+1, totalBlocks)
+			return fmt.Errorf("isolate error: %v", stderr.String())
 		}
 
 		// TODO: process error responses
 		// for _, errStr := range strings.Split(stderr.String(), "\n") {
 		// }
-		logger.Errorf("block %d of %d errored", blockNo, totalBlocks)
+		logger.Errorf("block %d of %d errored", blockNo+1, totalBlocks)
 	}
+
+	// reporter.CompleteExecution(executionID)
 
 	return nil
 }
@@ -161,5 +191,5 @@ func WriteToTempFile(b []byte, lang string, conf models.Config) (string, error) 
 }
 
 func CodeFileName(dir string, name string, lang string) string {
-	return fmt.Sprintf("%v/%v.%v", dir, name, utils.GetSupportedLanguages()[lang])
+	return fmt.Sprintf("%v/%v%v", dir, name, utils.GetSupportedLanguages()[lang])
 }

@@ -2,7 +2,12 @@ import { toaster } from "@/components/ui/toaster";
 import { useAuthToken, useJob } from "@/lib/api/hooks";
 import { createJob, updateJob } from "@/lib/api/queries";
 import type { Job, JobCreateRequest, JobUpdateRequest } from "@/lib/types";
-import { getKeyByValue, JobFrequency, queryClient } from "@/lib/utils";
+import {
+  formatPayload,
+  getKeyByValue,
+  JobFrequency,
+  queryClient,
+} from "@/lib/utils";
 import { Button, Flex } from "@chakra-ui/react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
@@ -51,18 +56,13 @@ export const JobForm = ({
     mutationFn: createJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      if (job_id) {
-        queryClient.invalidateQueries({ queryKey: ["jobs", job_id] });
-      }
     },
   });
   const updateMutation = useMutation({
     mutationFn: updateJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      if (job_id) {
-        queryClient.invalidateQueries({ queryKey: ["jobs", job_id] });
-      }
+      queryClient.invalidateQueries({ queryKey: ["jobs", job_id] });
     },
   });
 
@@ -71,7 +71,7 @@ export const JobForm = ({
       job_name: values.job_name,
       job_description: values.job_description,
       frequency: values.frequency,
-      payload: "```go\n" + values.payload.trimEnd() + "\n```",
+      payload: formatPayload(values.payload),
       max_retries: values.max_retries,
       execution_time: values.execution_time,
     };
@@ -130,7 +130,7 @@ export const JobForm = ({
       ...(values.execution_time != original.execution_time && {
         execution_time: values.execution_time,
       }),
-      payload: values.payload,
+      payload: formatPayload(values.payload),
     };
 
     try {

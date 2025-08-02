@@ -57,3 +57,6 @@ export const getJobStatusColor = (status: keyof typeof JobStatus) => {
 };
 
 export const displayDate = (date: string) => new Date(date).toLocaleString();
+
+export const formatPayload = (payload: string) =>
+  "```go\n" + payload.trimEnd() + "\n```";
