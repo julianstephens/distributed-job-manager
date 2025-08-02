@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
 	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
 	"github.com/julianstephens/distributed-job-manager/pkg/queue"
@@ -36,6 +37,7 @@ const (
 )
 
 type Log struct {
+	ID        string    `json:"_id"`
 	Version   string    `json:"version"`
 	Host      string    `json:"host"`
 	Message   string    `json:"message"`
@@ -72,7 +74,7 @@ func (l *GrayLogger) Info(msg string, additionalData *string) {
 		panic(err)
 	}
 
-	go l.doLog(ctx, data)
+	l.doLog(ctx, data)
 }
 
 func (l *GrayLogger) Error(msg string, trace *error) {
@@ -91,7 +93,7 @@ func (l *GrayLogger) Error(msg string, trace *error) {
 		panic(err)
 	}
 
-	go l.doLog(ctx, data)
+	l.doLog(ctx, data)
 }
 
 func (l *GrayLogger) Warn(msg string, additionalData *string) {
@@ -105,7 +107,7 @@ func (l *GrayLogger) Warn(msg string, additionalData *string) {
 		panic(err)
 	}
 
-	go l.doLog(ctx, data)
+	l.doLog(ctx, data)
 }
 
 func (l *GrayLogger) Debug(msg string, additionalData *string) {
@@ -119,14 +121,14 @@ func (l *GrayLogger) Debug(msg string, additionalData *string) {
 		panic(err)
 	}
 
-	go l.doLog(ctx, data)
+	l.doLog(ctx, data)
 }
 
 func (l *GrayLogger) doLog(ctx context.Context, body []byte) {
 	err := LogCh.PublishWithContext(
 		ctx,
 		"logs",
-		"jobsvc",
+		l.Originator,
 		false,
 		false,
 		amqp091.Publishing{
@@ -146,6 +148,7 @@ func (l *GrayLogger) formatGELFLog(msg string, level LogLevel, trace *string) Lo
 	}
 
 	log := Log{
+		ID:        uuid.New().String(),
 		Version:   "1.1",
 		Host:      hostname,
 		Message:   msg,

@@ -36,6 +36,7 @@ func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger)
 	api := controller.Controller{
 		DB:     db,
 		Config: conf,
+		Logger: log,
 	}
 
 	privateGroup := r.Group(BasePath, middleware.Guard())
