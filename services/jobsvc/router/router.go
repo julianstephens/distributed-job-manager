@@ -24,8 +24,8 @@ func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger)
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "x-api-key"},
+		AllowMethods:     []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -39,15 +39,31 @@ func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger)
 		Logger: log,
 	}
 
-	privateGroup := r.Group(BasePath, middleware.Guard())
+	baseGroup := r.Group(BasePath, middleware.Guard())
 
-	jobGroup := privateGroup.Group("/jobs")
+	jobAPI := controller.NewJobController(db, conf, log)
+	jobGroup := baseGroup.Group("/jobs", middleware.RequireScopes("read:jobs", "write:jobs"))
 	{
-		jobGroup.GET("/", api.GetJobs)
-		jobGroup.GET("/:id", api.GetJob)
-		jobGroup.POST("", api.CreateJob)
-		jobGroup.PATCH("/:id", api.UpdateJob)
-		jobGroup.DELETE("/:id", api.DeleteJob)
+		jobGroup.GET("/", jobAPI.GetJobs)
+		jobGroup.GET("/:id", jobAPI.GetJob)
+		jobGroup.POST("", jobAPI.CreateJob)
+		jobGroup.PATCH("/:id", jobAPI.UpdateJob)
+		jobGroup.DELETE("/:id", jobAPI.DeleteJob)
+	}
+
+	executionGroup := baseGroup.Group("/executions", middleware.RequireScopes("read:executions", "write:executions"))
+	{
+		executionGroup.POST("/", api.CreateExecution)
+		executionGroup.PATCH("/:id", api.UpdateExecution)
+	}
+
+	scheduleGroup := baseGroup.Group("/schedules", middleware.RequireScopes("read:schedules", "write:schedules"))
+	{
+		scheduleGroup.GET("/", api.GetSchedules)
+		scheduleGroup.GET("/:id", api.GetSchedule)
+		scheduleGroup.POST("", api.CreateSchedule)
+		scheduleGroup.PATCH("/:id", api.UpdateSchedule)
+		scheduleGroup.DELETE("/:id", api.DeleteSchedule)
 	}
 
 	return r

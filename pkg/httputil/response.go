@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/julianstephens/distributed-job-manager/pkg/utils"
 )
 
 type HTTPResponse[T any] struct {
@@ -44,7 +45,7 @@ func (s HTTPMethod) String() string {
 }
 
 func NewResponse[T any](ctx *gin.Context, data T, opts Options) {
-	status := If(opts.Status > 0, opts.Status, http.StatusOK)
+	status := utils.If(opts.Status > 0, opts.Status, http.StatusOK)
 
 	if !opts.IsCrudHandler {
 		ctx.JSON(status, data)

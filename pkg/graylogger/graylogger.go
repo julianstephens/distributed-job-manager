@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
-	"github.com/julianstephens/distributed-job-manager/pkg/httputil"
 	"github.com/julianstephens/distributed-job-manager/pkg/queue"
+	"github.com/julianstephens/distributed-job-manager/pkg/utils"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -37,14 +37,20 @@ const (
 )
 
 type Log struct {
-	ID        string    `json:"_id"`
-	Version   string    `json:"version"`
-	Host      string    `json:"host"`
-	Message   string    `json:"message"`
-	Trace     *string   `json:"full_message"`
-	Timestamp time.Time `json:"timestamp"`
-	Level     LogLevel  `json:"level"`
-	Origin    string    `json:"_origin"`
+	ID             string    `json:"_id"`
+	Version        string    `json:"version"`
+	Host           string    `json:"host"`
+	Message        string    `json:"message"`
+	Trace          *string   `json:"full_message"`
+	Timestamp      time.Time `json:"timestamp"`
+	Level          LogLevel  `json:"level"`
+	Origin         string    `json:"_origin"`
+	AdditionalData *string   `json:"_additional_data"`
+}
+
+type LogOptions struct {
+	err            *error
+	additionalData *map[string]interface{}
 }
 
 func NewLogger(originator string) (*GrayLogger, error) {
@@ -67,7 +73,7 @@ func (l *GrayLogger) Info(msg string, additionalData *string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log := l.formatGELFLog(msg, LogLevelInfo, additionalData)
+	log := l.formatGELFLog(msg, LogLevelInfo, additionalData, nil)
 
 	data, err := json.Marshal(&log)
 	if err != nil {
@@ -86,7 +92,36 @@ func (l *GrayLogger) Error(msg string, trace *error) {
 		err := *trace
 		errText = err.Error()
 	}
-	log := l.formatGELFLog(msg, LogLevelError, httputil.If(trace != nil, &errText, nil))
+	log := l.formatGELFLog(msg, LogLevelError, utils.If(trace != nil, &errText, nil), nil)
+
+	data, err := json.Marshal(&log)
+	if err != nil {
+		panic(err)
+	}
+
+	l.doLog(ctx, data)
+}
+
+func (l *GrayLogger) ErrorWithData(msg string, trace *error, additionalData *map[string]any) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var errText string
+	if trace != nil {
+		err := *trace
+		errText = err.Error()
+	}
+
+	var formattedData *string
+	if additionalData != nil {
+		d, err := json.Marshal(additionalData)
+		if err != nil {
+			panic(err)
+		}
+		formattedData = utils.StringPtr(string(d))
+	}
+
+	log := l.formatGELFLog(msg, LogLevelError, utils.If(trace != nil, &errText, nil), formattedData)
 
 	data, err := json.Marshal(&log)
 	if err != nil {
@@ -100,7 +135,7 @@ func (l *GrayLogger) Warn(msg string, additionalData *string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log := l.formatGELFLog(msg, LogLevelWarning, additionalData)
+	log := l.formatGELFLog(msg, LogLevelWarning, additionalData, nil)
 
 	data, err := json.Marshal(&log)
 	if err != nil {
@@ -114,7 +149,7 @@ func (l *GrayLogger) Debug(msg string, additionalData *string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log := l.formatGELFLog(msg, LogLevelDebug, additionalData)
+	log := l.formatGELFLog(msg, LogLevelDebug, additionalData, nil)
 
 	data, err := json.Marshal(&log)
 	if err != nil {
@@ -141,7 +176,7 @@ func (l *GrayLogger) doLog(ctx context.Context, body []byte) {
 	}
 }
 
-func (l *GrayLogger) formatGELFLog(msg string, level LogLevel, trace *string) Log {
+func (l *GrayLogger) formatGELFLog(msg string, level LogLevel, trace *string, additionalData *string) Log {
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic(err)
@@ -158,6 +193,9 @@ func (l *GrayLogger) formatGELFLog(msg string, level LogLevel, trace *string) Lo
 	}
 	if trace != nil {
 		log.Trace = trace
+	}
+	if additionalData != nil {
+		log.AdditionalData = additionalData
 	}
 
 	return log

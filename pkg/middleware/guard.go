@@ -59,7 +59,7 @@ func (j *JWTManager) Validate(c *gin.Context) (string, error) {
 		case errors.Is(err, jwt.ErrTokenMalformed):
 			return "", ErrInvalidToken
 		case errors.Is(err, jwt.ErrTokenSignatureInvalid):
-			return "", fmt.Errorf("invalid signature")
+			return "", fmt.Errorf("invalid token signature")
 		case errors.Is(err, jwt.ErrTokenExpired):
 			return "", fmt.Errorf("token expired")
 		default:
@@ -78,6 +78,9 @@ func (j *JWTManager) Validate(c *gin.Context) (string, error) {
 			return "", errors.New("invalid token audience")
 		}
 
+		parsedScopes := strings.Split(claims["scope"].(string), " ")
+		c.Set("scopes", parsedScopes)
+
 		return claims.GetSubject()
 	} else {
 		return "", errors.New("failed to parse token claims")
@@ -89,11 +92,59 @@ func Guard() gin.HandlerFunc {
 		jM := NewJWTManager()
 		uid, err := jM.Validate(ctx)
 		if err != nil {
-			httputil.NewError(ctx, http.StatusUnauthorized, err)
+			httputil.NewError(ctx, http.StatusUnauthorized, errors.New("unauthorized request"))
 			ctx.Abort()
 			return
 		}
 		ctx.Set("userId", uid)
 		ctx.Next()
+	}
+}
+
+// RequireScopes returns a Gin middleware that checks if the user has the required OAuth scopes.
+// If the user has the 'admin' scope, access is always granted regardless of requiredScopes.
+func RequireScopes(requiredScopes ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var userScopes []string
+
+		rawScopes, exists := c.Get("scopes")
+		if !exists {
+			httputil.NewError(c, http.StatusForbidden, errors.New("scopes not found in context"))
+			c.Abort()
+			return
+		}
+
+		switch v := rawScopes.(type) {
+		case string:
+			userScopes = strings.Fields(v)
+		case []string:
+			userScopes = v
+		default:
+			httputil.NewError(c, http.StatusForbidden, errors.New("invalid scopes format in context"))
+			c.Abort()
+			return
+		}
+
+		if slices.Contains(userScopes, "admin") {
+			c.Set("isAdmin", true)
+			c.Next()
+			return
+		}
+
+		scopeSet := make(map[string]struct{}, len(userScopes))
+		for _, s := range userScopes {
+			scopeSet[s] = struct{}{}
+		}
+
+		for _, scope := range requiredScopes {
+			if _, ok := scopeSet[scope]; !ok {
+				httputil.NewError(c, http.StatusForbidden, fmt.Errorf("missing required scope: %s", scope))
+				c.Abort()
+				return
+			}
+		}
+
+		c.Set("isAdmin", false)
+		c.Next()
 	}
 }

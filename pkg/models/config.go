@@ -13,6 +13,11 @@ type JobServiceConfig struct {
 	Port string `env:"JOB_SERVICE_PORT"`
 }
 
+type ScheduleServiceConfig struct {
+	Auth0ClientID     string `env:"SCHEDULING_AUTH0_CLIENT_ID"`
+	Auth0ClientSecret string `env:"SCHEDULING_AUTH0_CLIENT_SECRET"`
+}
+
 type CassandraConfig struct {
 	Host     string `env:"CASS_HOST"`
 	Port     string `env:"CASS_PORT"`
@@ -33,18 +38,31 @@ type Auth0Config struct {
 	JWKSUrl  string `env:"JWKS_URL"`
 }
 
+type Auth0WorkerConfig struct {
+	ClientId     string `env:"WORKER_AUTH0_CLIENT_ID"`
+	ClientSecret string `env:"WORKER_AUTH0_CLIENT_SECRET"`
+}
+
+type WorkerConfig struct {
+	ID string `env:"WORKER_ID"`
+}
+
 type Config struct {
 	BaseEndpoint     string `env:"BASE_ENDPOINT"`
 	JWTSecretKey     string `env:"JWT_SECRET_KEY"`
 	TaskTableName    string `env:"TASK_TABLE_NAME"`
 	TaskTableVersion string `env:"TASK_TABLE_VERSION"`
 	Env              string `env:"ENV" envDefault:"development"`
-	TempDir          string `env:"TEMP_DIR"`
+	JobAPIEndpoint   string `env:"REPORTER_URL"`
 	SandboxCount     int    `env:"SANDBOX_COUNT"`
+	TempDir          string `env:"TEMP_DIR"`
 	WorkerID         string `env:"WORKER_ID"`
 	Auth0            Auth0Config
+	Auth0Worker      Auth0WorkerConfig
 	Database         DatabaseConfig
 	JobService       JobServiceConfig
 	Cassandra        CassandraConfig
 	Rabbit           RabbitConfig
+	Schedule         ScheduleServiceConfig
+	Worker           WorkerConfig
 }

@@ -48,6 +48,7 @@ type JobUpdateRequest struct {
 	JobName        *string    `json:"job_name"`
 	JobDescription *string    `json:"job_description"`
 	Frequency      *string    `json:"frequency"`
+	Status         *string    `json:"status"`
 	Payload        *string    `json:"payload"`
 	MaxRetries     *int       `json:"max_retries"`
 	ExecutionTime  *time.Time `json:"execution_time"`
@@ -60,14 +61,22 @@ type JobSchedule struct {
 }
 
 type JobExecution struct {
-	ExecutionID  string    `json:"execution_id"`
+	ExecutionID  string    `binding:"-" json:"execution_id"`
 	JobID        string    `json:"job_id"`
 	WorkerID     string    `json:"worker_id"`
 	StartTime    time.Time `json:"start_time"`
 	EndTime      time.Time `json:"end_time"`
-	Status       string    `json:"status"`
+	Status       string    `binding:"-" json:"status"`
 	Output       string    `json:"output"`
 	ErrorMessage string    `json:"error_message"`
+}
+
+type JobExecutionUpdateRequest struct {
+	StartTime    *time.Time `json:"start_time"`
+	EndTime      *time.Time `json:"end_time"`
+	Status       *string    `json:"status"`
+	Output       *string    `json:"output"`
+	ErrorMessage *string    `json:"error_message"`
 }
 
 // type WorkerNode struct {
