@@ -94,6 +94,7 @@ func (r *JobRepository) GetJob(jobId string, userId string, isAdmin bool) (job *
 	return
 }
 
+// CreateJob creates a new job in the database with the provided job data and user ID.
 func (r *JobRepository) CreateJob(jobData models.Job, userId string) (job *models.Job, err error) {
 	now := time.Now().UTC()
 

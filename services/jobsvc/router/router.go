@@ -51,10 +51,11 @@ func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger)
 		jobGroup.DELETE("/:id", jobAPI.DeleteJob)
 	}
 
+	executionAPI := controller.NewExecutionController(db, conf, log)
 	executionGroup := baseGroup.Group("/executions", middleware.RequireScopes("read:executions", "write:executions"))
 	{
-		executionGroup.POST("/", api.CreateExecution)
-		executionGroup.PATCH("/:id", api.UpdateExecution)
+		executionGroup.POST("/", executionAPI.CreateExecution)
+		executionGroup.PATCH("/:id", executionAPI.UpdateExecution)
 	}
 
 	scheduleGroup := baseGroup.Group("/schedules", middleware.RequireScopes("read:schedules", "write:schedules"))
