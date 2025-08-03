@@ -14,7 +14,7 @@ import (
 func main() {
 	conf := config.GetConfig()
 
-	conn, err := queue.GetConnection(conf.Rabbit.Username, conf.Rabbit.Password, conf)
+	conn, err := queue.GetConnection(conf.Rabbit.Username, conf.Rabbit.Password, "", conf)
 	if err != nil {
 		logger.Fatalf("unable to get queue connection: %v", err)
 		return

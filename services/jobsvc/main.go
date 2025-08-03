@@ -43,6 +43,15 @@ func main() {
 	defer queue.CloseConnection(conf.Rabbit.LoggingUsername)
 	defer log.LogCh.Close()
 
+	qWriter, err := graylogger.NewQueueWriter(conf, "jobsvc")
+	if err != nil {
+		logger.Fatalf("unable to create graylogger queue writer: %v", err)
+		return
+	}
+	defer qWriter.Close()
+
+	gin.DefaultWriter = qWriter
+
 	r := router.Setup(conf, db, log)
 	r.GET("/api/v1/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

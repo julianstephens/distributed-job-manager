@@ -15,7 +15,7 @@ var (
 	cacheMutex sync.RWMutex
 )
 
-func GetConnection(username string, password string, conf *models.Config) (*amqp091.Connection, error) {
+func GetConnection(username string, password string, vhost string, conf *models.Config) (*amqp091.Connection, error) {
 	cacheMutex.RLock()
 	if val, ok := cache[username]; ok {
 		cacheMutex.RUnlock()
@@ -29,7 +29,7 @@ func GetConnection(username string, password string, conf *models.Config) (*amqp
 		return val, nil
 	}
 
-	conn, err := setup(username, password, conf)
+	conn, err := setup(username, password, vhost, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func CloseConnection(username string) {
 	}
 }
 
-func setup(username string, password string, conf *models.Config) (*amqp091.Connection, error) {
-	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/graylog", username, password, conf.Rabbit.Host, conf.Rabbit.Port))
+func setup(username string, password string, vhost string, conf *models.Config) (*amqp091.Connection, error) {
+	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/%s", username, password, conf.Rabbit.Host, conf.Rabbit.Port, vhost))
 	if err != nil {
 		logger.Fatalf("unable to get rabbitmq connection: %v", err)
 		return nil, err
