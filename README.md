@@ -5,6 +5,7 @@
 Pre-requisites:
 
 - docker
+- Golang >=1.24
 
 Steps:
 
