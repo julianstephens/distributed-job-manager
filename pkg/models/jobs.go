@@ -60,6 +60,11 @@ type JobSchedule struct {
 	LastRunTime time.Time `json:"last_run_time"`
 }
 
+type JobScheduleUpdateRequest struct {
+	NextRunTime *time.Time `json:"next_run_time"`
+	LastRunTime *time.Time `json:"last_run_time"`
+}
+
 type JobExecution struct {
 	ExecutionID  string    `binding:"-" json:"execution_id"`
 	JobID        string    `json:"job_id"`

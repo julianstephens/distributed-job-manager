@@ -33,12 +33,6 @@ func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger)
 
 	docs.SwaggerInfo.BasePath = BasePath
 
-	api := controller.Controller{
-		DB:     db,
-		Config: conf,
-		Logger: log,
-	}
-
 	baseGroup := r.Group(BasePath, middleware.Guard())
 
 	jobAPI := controller.NewJobController(db, conf, log)
@@ -58,13 +52,14 @@ func Setup(conf *models.Config, db *store.DBSession, log *graylogger.GrayLogger)
 		executionGroup.PATCH("/:id", executionAPI.UpdateExecution)
 	}
 
+	scheduleAPI := controller.NewScheduleController(db, conf, log)
 	scheduleGroup := baseGroup.Group("/schedules", middleware.RequireScopes("read:schedules", "write:schedules"))
 	{
-		scheduleGroup.GET("/", api.GetSchedules)
-		scheduleGroup.GET("/:id", api.GetSchedule)
-		scheduleGroup.POST("", api.CreateSchedule)
-		scheduleGroup.PATCH("/:id", api.UpdateSchedule)
-		scheduleGroup.DELETE("/:id", api.DeleteSchedule)
+		scheduleGroup.GET("/", scheduleAPI.GetSchedules)
+		scheduleGroup.GET("/:id", scheduleAPI.GetSchedule)
+		scheduleGroup.POST("", scheduleAPI.CreateSchedule)
+		scheduleGroup.PATCH("/:id", scheduleAPI.UpdateSchedule)
+		scheduleGroup.DELETE("/:id", scheduleAPI.DeleteSchedule)
 	}
 
 	return r
