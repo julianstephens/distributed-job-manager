@@ -8,7 +8,6 @@ import (
 	"github.com/julianstephens/distributed-job-manager/pkg/graylogger"
 	"github.com/julianstephens/distributed-job-manager/pkg/logger"
 	"github.com/julianstephens/distributed-job-manager/pkg/queue"
-	"github.com/julianstephens/distributed-job-manager/pkg/store"
 	"github.com/julianstephens/distributed-job-manager/services/schedulingsvc/scheduler"
 )
 
@@ -23,14 +22,13 @@ func main() {
 	defer queue.CloseConnection(conf.Rabbit.LoggingUsername)
 	defer log.LogCh.Close()
 
-	db, err := store.GetDB(conf.Cassandra.Keyspace)
+	sched, err := scheduler.NewScheduler(conf, log)
 	if err != nil {
-		log.Error("unable to get db connection", &err)
-		logger.Fatalf("unable to get db connection: %v", err)
+		logger.Fatalf("unable to create scheduler: %v", err)
 		return
 	}
-
-	sched := scheduler.NewScheduler(conf, log, db)
+	defer queue.CloseConnection(conf.Rabbit.Username)
+	defer sched.ScheduleCh.Close()
 
 	log.Info("scheduling service initialized", nil)
 

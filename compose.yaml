@@ -15,6 +15,7 @@ services:
       - ${JOB_SERVICE_PORT}:${JOB_SERVICE_PORT}
     links:
       - cassandra
+      - rabbitmq
     volumes:
       - .:${APP_HOME}
 
@@ -30,7 +31,7 @@ services:
     ports:
       - ${SCHEDULING_SERVICE_PORT}:${SCHEDULING_SERVICE_PORT}
     links:
-      - cassandra
+      - jobsvc
       - rabbitmq
     volumes:
       - .:${APP_HOME}
@@ -48,7 +49,7 @@ services:
     ports:
       - ${WORKER_SERVICE_PORT}:${WORKER_SERVICE_PORT}
     links:
-      - cassandra
+      - jobsvc
       - rabbitmq
     volumes:
       - .:${APP_HOME}

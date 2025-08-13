@@ -58,7 +58,7 @@ func (p *Parser) ExtractCodeBlocks(n *html.Node, data *DocumentData) {
 				content := c.FirstChild.Data
 				data.CodeBlocks = append(data.CodeBlocks, CodeBlock{
 					Language: language,
-					Content:  content,
+					Content:  strings.ReplaceAll(content, "'", "\""),
 				})
 			}
 		}

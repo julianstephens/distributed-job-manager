@@ -29,6 +29,7 @@ func (j *Job) GetJobFrequencyIntervalSeconds() int {
 }
 
 const (
+	JobStatusReady      = "ready"
 	JobStatusPending    = "pending"
 	JobStatusScheduled  = "scheduled"
 	JobStatusInProgress = "in-progress"

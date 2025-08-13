@@ -246,5 +246,8 @@ func (r *JobRepository) DeleteJob(jobId string) (err error) {
 		err = fmt.Errorf("unable to delete job %s", jobId)
 		return
 	}
+
+	// TODO: Also delete any associated schedules, logs, etc.
+
 	return
 }

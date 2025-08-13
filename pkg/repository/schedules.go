@@ -88,7 +88,7 @@ func (r *ScheduleRepository) UpdateSchedule(id string, scheduleUpdates models.Jo
 		return
 	}
 
-	if err = r.DB.Client.Query(models.JobSchedules.Delete()).BindMap(map[string]interface{}{"job_id": id, "next_run_time": existingSchedule.NextRunTime}).ExecRelease(); err != nil {
+	if err = r.DB.Client.Query(models.JobSchedules.Delete()).BindMap(map[string]any{"job_id": id, "next_run_time": existingSchedule.NextRunTime}).ExecRelease(); err != nil {
 		r.Logger.Error(fmt.Sprintf("unable to delete job schedule %s in db", id), &err)
 		err = fmt.Errorf("unable to update job schedule %s", id)
 		return

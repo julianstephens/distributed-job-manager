@@ -27,7 +27,6 @@ func NewExecutionRepository(db *store.DBSession, logger *graylogger.GrayLogger) 
 
 // CreateExecution creates a new job execution in the database.
 func (r *ExecutionRepository) CreateExecution(execData models.JobExecution) (jobExecution *models.JobExecution, err error) {
-	r.Logger.Info("creating job execution", nil)
 	execData.ExecutionID = uuid.New().String()
 	execData.Status = models.JobStatusScheduled
 
@@ -37,7 +36,7 @@ func (r *ExecutionRepository) CreateExecution(execData models.JobExecution) (job
 		return
 	}
 
-	var res models.JobExecution
+	var res []models.JobExecution
 	stmt, names := qb.Select(models.JobExecutions.Name()).Where(qb.Eq("execution_id")).AllowFiltering().ToCql()
 	if err = r.DB.Client.Query(stmt, names).Bind(execData.ExecutionID).SelectRelease(&res); err != nil {
 		r.Logger.Error("unable to get created job execution", &err)
@@ -45,7 +44,14 @@ func (r *ExecutionRepository) CreateExecution(execData models.JobExecution) (job
 		return
 	}
 
-	jobExecution = &res
+	if len(res) == 0 {
+		logMsg := fmt.Sprintf("no job execution found with ID %s after creation", execData.ExecutionID)
+		r.Logger.Error(logMsg, nil)
+		err = errors.New(logMsg)
+		return
+	}
+
+	jobExecution = &res[0]
 
 	return
 }
@@ -56,16 +62,17 @@ func (r *ExecutionRepository) UpdateExecution(execUpdates models.JobExecutionUpd
 
 	var res models.JobExecution
 	stmt, names := qb.Select(models.JobExecutions.Name()).Where(qb.Eq("execution_id")).AllowFiltering().ToCql()
-	if err = r.DB.Client.Query(stmt, names).Bind(executionId).SelectRelease(&res); err != nil {
+	if err = r.DB.Client.Query(stmt, names).Bind(executionId).Get(&res); err != nil {
 		r.Logger.Error(fmt.Sprintf("unable to get job execution %s", executionId), &err)
 		err = fmt.Errorf("unable to get job execution %s", executionId)
 		return
 	}
 
 	stmt, names = qb.Delete(models.JobExecutions.Name()).Where(qb.Eq("execution_id")).ToCql()
-	if err = r.DB.Client.Query(stmt, names).Bind(executionId).ExecRelease(); err != nil {
-		r.Logger.Error(fmt.Sprintf("unable to delete job execution %s", executionId), &err)
-		err = fmt.Errorf("unable to delete job execution %s", executionId)
+	if err = r.DB.Client.Query(stmt, names).Bind(res.JobID, res.WorkerID, res.Status).ExecRelease(); err != nil {
+		msg := fmt.Sprintf("unable to delete job execution %s for job %s", executionId, res.JobID)
+		r.Logger.Error(msg, &err)
+		err = errors.New(msg)
 		return
 	}
 

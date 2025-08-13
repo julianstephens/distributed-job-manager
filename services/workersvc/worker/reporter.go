@@ -1,15 +1,12 @@
 package worker
 
 import (
-	"bytes"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"time"
 
 	"github.com/julianstephens/distributed-job-manager/pkg/auth0client"
 	"github.com/julianstephens/distributed-job-manager/pkg/config"
+	"github.com/julianstephens/distributed-job-manager/pkg/graylogger"
 	"github.com/julianstephens/distributed-job-manager/pkg/models"
 	"github.com/julianstephens/distributed-job-manager/pkg/utils"
 )
@@ -19,16 +16,20 @@ type Reporter struct {
 	token   *string
 	client  *auth0client.Auth0Client
 	baseURL string
+	log     *graylogger.GrayLogger
+	api     *JobAPI
 }
 
-func NewReporter() *Reporter {
+func NewReporter(log *graylogger.GrayLogger) *Reporter {
 	conf := config.GetConfig()
 	r := &Reporter{
 		conf:   conf,
 		token:  nil,
+		log:    log,
 		client: auth0client.NewAuth0Client(conf.Auth0Worker.ClientId, conf.Auth0Worker.ClientSecret),
 	}
-	r.baseURL = fmt.Sprintf("%s/%s", r.conf.JobAPIEndpoint, "executions")
+	r.baseURL = r.conf.JobAPIEndpoint
+	r.api = NewJobAPI(r.client, log, r.baseURL)
 	return r
 }
 
@@ -39,91 +40,58 @@ func (r *Reporter) RegisterExecution(jobId string) (*models.JobExecution, error)
 		Status:   models.JobStatusScheduled,
 	}
 
-	data, err := r.makeRequest("POST", nil, &exec)
+	data, err := r.api.CreateExecution(exec)
 	if err != nil {
 		return nil, err
 	}
 
-	var jobExec models.JobExecution
-	if err = json.Unmarshal(*data, &jobExec); err != nil {
-		return nil, err
+	if data == nil {
+		msg := "no data returned from execution registration"
+		r.log.Error(msg, nil)
+		return nil, errors.New(msg)
 	}
 
-	return &jobExec, nil
+	return data, nil
 }
 
 func (r *Reporter) StartExecution(executionId string) (*models.JobExecution, error) {
-	start := time.Now().UTC()
 	status := models.JobStatusInProgress
 
 	update := models.JobExecutionUpdateRequest{
-		StartTime: &start,
-		Status:    &status,
+		Status: &status,
 	}
 
-	data, err := r.makeRequest("PATCH", &executionId, update)
+	data, err := r.api.UpdateExecution(executionId, update)
 	if err != nil {
 		return nil, err
 	}
 
-	var jobExec models.JobExecution
-	if err = json.Unmarshal(*data, &jobExec); err != nil {
-		return nil, err
+	if data == nil {
+		return nil, fmt.Errorf("no data returned from execution start")
 	}
 
-	return &jobExec, nil
+	return data, nil
 }
 
 func (r *Reporter) CompleteExecution(executionId string, response RunnerResponse) (*models.JobExecution, error) {
-	end := time.Now().UTC()
+	r.log.Info(fmt.Sprintf("completing execution %s with status %s", executionId, utils.If(response.Error == nil, "completed", "failed")), nil)
+
 	update := models.JobExecutionUpdateRequest{
-		EndTime: &end,
+		StartTime:    &response.StartTime,
+		EndTime:      &response.EndTime,
+		Status:       utils.StringPtr(utils.If(response.Error == nil, models.JobStatusCompleted, models.JobStatusFailed)),
+		ErrorMessage: response.Error,
+		Output:       response.Output,
 	}
 
-	data, err := r.makeRequest("PATCH", &executionId, update)
+	data, err := r.api.UpdateExecution(executionId, update)
 	if err != nil {
 		return nil, err
 	}
 
-	var jobExec models.JobExecution
-	if err = json.Unmarshal(*data, &jobExec); err != nil {
-		return nil, err
+	if data == nil {
+		return nil, fmt.Errorf("no data returned from execution completion")
 	}
 
-	return &jobExec, nil
-}
-
-func (r *Reporter) makeRequest(method string, path *string, body any) (*[]byte, error) {
-	var jsonBody []byte
-	var err error
-	if body != nil {
-		jsonBody, err = json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	req, err := http.NewRequest(
-		method,
-		utils.If(path != nil, fmt.Sprintf("%s/%s", r.baseURL, *path), r.baseURL),
-		utils.If(body != nil, bytes.NewReader(jsonBody), nil),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *r.token))
-
-	res, err := r.client.Request(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return &data, nil
+	return data, nil
 }

@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"encoding/json"
 	"os"
+	"reflect"
 
 	"github.com/julianstephens/distributed-job-manager/pkg/logger"
 )
@@ -77,4 +79,35 @@ func Ensure(path string, isDir bool) error {
 // StringPtr returns a pointer to the given string.
 func StringPtr(s string) *string {
 	return &s
+}
+
+// MustMarshalJson marshals the given value to JSON and panics if there is an error.
+func MustMarshalJson(v any) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+// StructToMap converts a struct to a map[string]any using reflection.
+func StructToMap(obj any) map[string]any {
+	objValue := reflect.ValueOf(obj)
+	if objValue.Kind() == reflect.Ptr {
+		objValue = objValue.Elem()
+	}
+
+	if objValue.Kind() != reflect.Struct {
+		return nil
+	}
+
+	result := make(map[string]any)
+	objType := objValue.Type()
+
+	for i := 0; i < objValue.NumField(); i++ {
+		field := objType.Field(i)
+		fieldValue := objValue.Field(i)
+		result[field.Name] = fieldValue.Interface()
+	}
+	return result
 }
